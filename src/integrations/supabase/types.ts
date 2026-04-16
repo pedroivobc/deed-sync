@@ -14,16 +14,375 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          birthday: string | null
+          category: Database["public"]["Enums"]["client_category"]
+          company: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          internal_notes: string | null
+          last_contact: string | null
+          name: string
+          next_followup: string | null
+          notes: string | null
+          origin: Database["public"]["Enums"]["client_origin"] | null
+          phone: string | null
+          preferred_cartorio: string | null
+          preferred_contact: Database["public"]["Enums"]["contact_pref"] | null
+          profession: string | null
+          referred_by: string | null
+          satisfaction_nps: number | null
+          status: Database["public"]["Enums"]["client_status"]
+          type: Database["public"]["Enums"]["client_type"]
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          birthday?: string | null
+          category?: Database["public"]["Enums"]["client_category"]
+          company?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          internal_notes?: string | null
+          last_contact?: string | null
+          name: string
+          next_followup?: string | null
+          notes?: string | null
+          origin?: Database["public"]["Enums"]["client_origin"] | null
+          phone?: string | null
+          preferred_cartorio?: string | null
+          preferred_contact?: Database["public"]["Enums"]["contact_pref"] | null
+          profession?: string | null
+          referred_by?: string | null
+          satisfaction_nps?: number | null
+          status?: Database["public"]["Enums"]["client_status"]
+          type?: Database["public"]["Enums"]["client_type"]
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          birthday?: string | null
+          category?: Database["public"]["Enums"]["client_category"]
+          company?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          internal_notes?: string | null
+          last_contact?: string | null
+          name?: string
+          next_followup?: string | null
+          notes?: string | null
+          origin?: Database["public"]["Enums"]["client_origin"] | null
+          phone?: string | null
+          preferred_cartorio?: string | null
+          preferred_contact?: Database["public"]["Enums"]["contact_pref"] | null
+          profession?: string | null
+          referred_by?: string | null
+          satisfaction_nps?: number | null
+          status?: Database["public"]["Enums"]["client_status"]
+          type?: Database["public"]["Enums"]["client_type"]
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_entries: {
+        Row: {
+          amount: number
+          category: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string
+          id: string
+          service_id: string | null
+          status: Database["public"]["Enums"]["finance_status"]
+          type: Database["public"]["Enums"]["finance_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date: string
+          description: string
+          id?: string
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["finance_status"]
+          type: Database["public"]["Enums"]["finance_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string
+          id?: string
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["finance_status"]
+          type?: Database["public"]["Enums"]["finance_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_entries_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          theme_preference: Database["public"]["Enums"]["theme_pref"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          name?: string | null
+          phone?: string | null
+          theme_preference?: Database["public"]["Enums"]["theme_pref"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          theme_preference?: Database["public"]["Enums"]["theme_pref"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          payload: Json | null
+          service_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          service_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          service_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_activity_log_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_activity_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          assigned_to: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          custom_fields: Json
+          due_date: string | null
+          etapa_processo: string | null
+          etapa_tarefa: string | null
+          id: string
+          pasta_fisica: boolean
+          stage: Database["public"]["Enums"]["service_stage"]
+          subject: string
+          type: Database["public"]["Enums"]["service_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          custom_fields?: Json
+          due_date?: string | null
+          etapa_processo?: string | null
+          etapa_tarefa?: string | null
+          id?: string
+          pasta_fisica?: boolean
+          stage?: Database["public"]["Enums"]["service_stage"]
+          subject: string
+          type: Database["public"]["Enums"]["service_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          custom_fields?: Json
+          due_date?: string | null
+          etapa_processo?: string | null
+          etapa_tarefa?: string | null
+          id?: string
+          pasta_fisica?: boolean
+          stage?: Database["public"]["Enums"]["service_stage"]
+          subject?: string
+          type?: Database["public"]["Enums"]["service_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "administrador" | "gerente" | "colaborador"
+      client_category: "regular" | "recorrente" | "premium" | "unico"
+      client_origin:
+        | "indicacao"
+        | "corretor_parceiro"
+        | "imobiliaria"
+        | "organico"
+        | "site"
+        | "recorrente"
+        | "cartorio_parceiro"
+        | "outros"
+      client_status: "ativo" | "inativo" | "vip" | "risco"
+      client_type: "PF" | "PJ"
+      contact_pref: "whatsapp" | "telefone" | "email" | "presencial"
+      finance_status: "pago" | "pendente"
+      finance_type: "receita" | "despesa"
+      service_stage:
+        | "entrada"
+        | "documentacao"
+        | "analise"
+        | "execucao"
+        | "revisao"
+        | "concluido"
+      service_type: "escritura" | "avulso" | "regularizacao"
+      theme_pref: "light" | "dark"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +509,34 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["administrador", "gerente", "colaborador"],
+      client_category: ["regular", "recorrente", "premium", "unico"],
+      client_origin: [
+        "indicacao",
+        "corretor_parceiro",
+        "imobiliaria",
+        "organico",
+        "site",
+        "recorrente",
+        "cartorio_parceiro",
+        "outros",
+      ],
+      client_status: ["ativo", "inativo", "vip", "risco"],
+      client_type: ["PF", "PJ"],
+      contact_pref: ["whatsapp", "telefone", "email", "presencial"],
+      finance_status: ["pago", "pendente"],
+      finance_type: ["receita", "despesa"],
+      service_stage: [
+        "entrada",
+        "documentacao",
+        "analise",
+        "execucao",
+        "revisao",
+        "concluido",
+      ],
+      service_type: ["escritura", "avulso", "regularizacao"],
+      theme_pref: ["light", "dark"],
+    },
   },
 } as const
