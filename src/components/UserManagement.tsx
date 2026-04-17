@@ -181,7 +181,7 @@ export function UserManagement() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRowsSkeleton rows={5} cols={6} />
             ) : sorted.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Nenhum usuário.</TableCell></TableRow>
             ) : (
@@ -198,18 +198,17 @@ export function UserManagement() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(u)} aria-label="Editar">
+                        <IconAction label="Editar usuário" onClick={() => openEdit(u)}>
                           <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="icon"
+                        </IconAction>
+                        <IconAction
+                          label={isMe ? "Você não pode excluir o próprio usuário" : "Excluir usuário"}
                           onClick={() => setConfirmDelete(u)}
                           disabled={isMe}
-                          aria-label="Excluir"
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </IconAction>
                       </div>
                     </TableCell>
                   </TableRow>
