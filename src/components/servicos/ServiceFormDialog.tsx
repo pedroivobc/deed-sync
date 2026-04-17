@@ -468,6 +468,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
           if (!o) setPendingStageOnComplete(null);
         }}
         onConfirm={onConfirmComplete}
+        suggestedRevenue={suggestedRevenue}
       />
     </>
   );
