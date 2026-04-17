@@ -8,6 +8,7 @@ import { CalendarIcon } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -119,6 +120,8 @@ function joinAddress(v: FormValues): string | null {
 
 export function ClientFormDialog({ open, onOpenChange, client, onSaved }: Props) {
   const { user } = useAuth();
+  const { can } = usePermissions();
+  const canSeeInternalNotes = can("view_internal_notes");
   const [submitting, setSubmitting] = useState(false);
 
   const defaults = useMemo<FormValues>(() => {

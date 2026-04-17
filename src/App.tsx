@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { RoleGuard } from "@/components/RoleGuard";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
@@ -29,7 +30,16 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
             <Route path="/servicos" element={<ProtectedRoute><Servicos /></ProtectedRoute>} />
-            <Route path="/financeiro" element={<ProtectedRoute requireRoles={["administrador", "gerente"]}><Financeiro /></ProtectedRoute>} />
+            <Route
+              path="/financeiro"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard permissions={["access_financial"]} redirect>
+                    <Financeiro />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   STATUS_LABEL, STATUS_BADGE, CATEGORY_LABEL, ORIGIN_LABEL,
   followupColorClass, type ClientStatus, type ClientCategory, type ClientOrigin,
@@ -42,7 +42,7 @@ type SortDir = "asc" | "desc";
 const PAGE_SIZE = 20;
 
 export default function CRM() {
-  const { isManager } = useAuth(); // admin or gerente
+  const { can } = usePermissions();
 
   const [rows, setRows] = useState<ClientRow[]>([]);
   const [serviceCounts, setServiceCounts] = useState<Record<string, number>>({});
@@ -254,15 +254,16 @@ export default function CRM() {
                           <Button variant="ghost" size="icon" onClick={() => openEdit(c)} aria-label="Editar">
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost" size="icon"
-                            onClick={() => setConfirmDel(c)}
-                            disabled={!isManager}
-                            className="text-destructive hover:text-destructive"
-                            aria-label="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {can("delete_client") && (
+                            <Button
+                              variant="ghost" size="icon"
+                              onClick={() => setConfirmDel(c)}
+                              className="text-destructive hover:text-destructive"
+                              aria-label="Excluir"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
