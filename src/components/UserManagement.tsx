@@ -279,27 +279,21 @@ export function UserManagement() {
       </Dialog>
 
       {/* Delete confirmation */}
-      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação removerá permanentemente <strong>{confirmDelete?.name ?? confirmDelete?.email}</strong>{" "}
-              do sistema, incluindo acesso, perfil e papéis. Não é possível desfazer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); doDelete(); }}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? "Excluindo..." : "Excluir"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+        title="Excluir usuário?"
+        description={
+          <>
+            Esta ação removerá permanentemente{" "}
+            <strong>{confirmDelete?.name ?? confirmDelete?.email}</strong> do sistema,
+            incluindo acesso, perfil e papéis. Esta ação não pode ser desfeita.
+          </>
+        }
+        confirmText="Sim, excluir"
+        loadingText="Excluindo..."
+        onConfirm={doDelete}
+      />
     </Card>
   );
 }
