@@ -149,7 +149,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     }
     setCompleteOpen(false);
     // Stash flag in customFields — saved on submit + log entry on save
-    (customFields as Record<string, unknown>)._pending_completion = data;
+    (customFields as unknown as Record<string, unknown>)._pending_completion = data;
     setCustomFields({ ...customFields });
     toast.success("Conclusão preparada — clique em Salvar para confirmar.");
   };
