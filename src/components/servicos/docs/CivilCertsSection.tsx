@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, RefreshCw, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, FileText, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -43,14 +43,14 @@ export function CivilCertsSection({ serviceId, parties, civilCerts, onChanged }:
       status: "solicitada",
       is_issued: false,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Renovação criada — certidão antiga mantida no histórico.");
     onChanged();
   };
   const onDelete = async () => {
     if (!deleteId) return;
     const { error } = await supabase.from("service_civil_certificates").delete().eq("id", deleteId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Certidão removida.");
     setDeleteId(null);
     onChanged();
@@ -67,6 +67,7 @@ export function CivilCertsSection({ serviceId, parties, civilCerts, onChanged }:
 
       {parties.length === 0 ? (
         <EmptyState
+          icon={Users}
           title="Cadastre as partes primeiro"
           description="As certidões pessoais são vinculadas a cada pessoa envolvida."
         />
@@ -166,8 +167,8 @@ export function CivilCertsSection({ serviceId, parties, civilCerts, onChanged }:
         onOpenChange={(o) => !o && setDeleteId(null)}
         onConfirm={onDelete}
         title="Remover certidão?"
+        description="Esta ação não pode ser desfeita."
         confirmText="Remover"
-        variant="destructive"
       />
     </section>
   );

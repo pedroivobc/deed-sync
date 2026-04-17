@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Mail, Phone, Pencil, Trash2, ShieldCheck, AlertCircle } from "lucide-react";
+import { Plus, Mail, Phone, Pencil, Trash2, ShieldCheck, AlertCircle, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export function PartiesSection({ serviceId, parties, onChanged }: Props) {
   const onDelete = async () => {
     if (!deleteId) return;
     const { error } = await supabase.from("service_parties").delete().eq("id", deleteId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Parte removida.");
     setDeleteId(null);
     onChanged();
@@ -57,6 +57,7 @@ export function PartiesSection({ serviceId, parties, onChanged }: Props) {
 
       {parties.length === 0 ? (
         <EmptyState
+          icon={Users}
           title="Nenhuma parte cadastrada"
           description="Adicione compradores, vendedores e demais envolvidos no processo."
         />
@@ -97,7 +98,6 @@ export function PartiesSection({ serviceId, parties, onChanged }: Props) {
         title="Remover parte?"
         description="Todas as certidões vinculadas a esta parte também serão removidas."
         confirmText="Remover"
-        variant="destructive"
       />
     </section>
   );

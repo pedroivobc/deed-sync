@@ -50,14 +50,14 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
       request_date: today,
       status: "solicitada",
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Renovação criada.");
     onChanged();
   };
   const onDelete = async () => {
     if (!deleteId) return;
     const { error } = await supabase.from("service_internet_certificates").delete().eq("id", deleteId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Certidão removida.");
     setDeleteId(null);
     onChanged();
@@ -132,8 +132,8 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
         onOpenChange={(o) => !o && setDeleteId(null)}
         onConfirm={onDelete}
         title="Remover certidão?"
+        description="Esta ação não pode ser desfeita."
         confirmText="Remover"
-        variant="destructive"
       />
     </section>
   );
