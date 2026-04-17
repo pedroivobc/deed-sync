@@ -38,8 +38,8 @@ export function RevenueByServiceChart({ data }: Props) {
           align="right"
           layout="vertical"
           wrapperStyle={{ fontSize: 12 }}
-          formatter={(value: string, entry: { payload?: Slice }) => {
-            const v = entry?.payload?.value ?? 0;
+          formatter={(value: string, entry: unknown) => {
+            const v = (entry as { payload?: Slice })?.payload?.value ?? 0;
             const pct = total ? ((v / total) * 100).toFixed(0) : "0";
             return `${value} — ${formatBRL(v)} (${pct}%)`;
           }}
