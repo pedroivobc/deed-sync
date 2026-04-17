@@ -180,6 +180,27 @@ export function CommandPalette() {
           {loading ? "Buscando..." : debounced.length >= 2 ? "Nenhum resultado." : "Digite para buscar."}
         </CommandEmpty>
 
+        {history.length > 0 && query.length === 0 && (
+          <>
+            <CommandGroup heading="Buscas recentes">
+              {history.map((h) => (
+                <CommandItem key={h} value={`recent-${h}`} onSelect={() => setQuery(h)}>
+                  <Clock className="mr-2 h-4 w-4 opacity-60" />
+                  <span className="flex-1 truncate">{h}</span>
+                </CommandItem>
+              ))}
+              <CommandItem
+                value="__clear-history"
+                onSelect={clearHistory}
+                className="text-muted-foreground"
+              >
+                <X className="mr-2 h-4 w-4" /> Limpar histórico
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
         <CommandGroup heading="Comandos rápidos">
           <CommandItem onSelect={() => go("/")}>
             <Home className="mr-2 h-4 w-4" /> Ir para Dashboard
