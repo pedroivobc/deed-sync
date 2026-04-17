@@ -142,7 +142,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     setStage(next);
   };
 
-  const onConfirmComplete = (data: { docs_delivered: boolean; final_notes: string }) => {
+  const onConfirmComplete = (data: { docs_delivered: boolean; final_notes: string; create_revenue: boolean }) => {
     if (pendingStageOnComplete) {
       setStage(pendingStageOnComplete);
       setPendingStageOnComplete(null);
@@ -153,6 +153,12 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     setCustomFields({ ...customFields });
     toast.success("Conclusão preparada — clique em Salvar para confirmar.");
   };
+
+  // Suggested revenue (Escritura): valor de compra
+  const suggestedRevenue =
+    type === "escritura"
+      ? (((customFields as EscrituraFields)?.financeiro?.valor_compra ?? null) as number | null)
+      : null;
 
   const logChange = async (
     serviceId: string,
