@@ -4,6 +4,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
 import { ServiceCard, type ServiceCardData } from "./ServiceCard";
 import { STAGE_BAR_CLASS, STAGE_LABEL, type ServiceStage } from "@/lib/serviceUi";
+import type { ServiceAlerts } from "@/hooks/useServiceAlerts";
 
 interface Props {
   stage: ServiceStage;
@@ -11,11 +12,12 @@ interface Props {
   onOpen: (id: string) => void;
   /** When true, render cards via @tanstack/react-virtual (used when total cards > 50). */
   virtualize?: boolean;
+  alertsMap?: Record<string, ServiceAlerts>;
 }
 
 const ESTIMATED_CARD_HEIGHT = 132;
 
-export function KanbanColumn({ stage, services, onOpen, virtualize = false }: Props) {
+export function KanbanColumn({ stage, services, onOpen, virtualize = false, alertsMap }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,13 +79,13 @@ export function KanbanColumn({ stage, services, onOpen, virtualize = false }: Pr
                     paddingBottom: 8,
                   }}
                 >
-                  <ServiceCard service={s} onOpen={onOpen} />
+                  <ServiceCard service={s} onOpen={onOpen} alerts={alertsMap?.[s.id]} />
                 </div>
               );
             })}
           </div>
         ) : (
-          services.map((s) => <ServiceCard key={s.id} service={s} onOpen={onOpen} />)
+          services.map((s) => <ServiceCard key={s.id} service={s} onOpen={onOpen} alerts={alertsMap?.[s.id]} />)
         )}
       </div>
     </div>

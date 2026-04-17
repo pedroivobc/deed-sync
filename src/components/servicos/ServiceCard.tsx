@@ -1,10 +1,11 @@
 import { memo } from "react";
-import { Calendar, Folder, MoreVertical } from "lucide-react";
+import { Calendar, Folder, MoreVertical, AlertTriangle, AlertCircle, CheckCircle2, ListChecks } from "lucide-react";
 import { format } from "date-fns";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getInitials } from "@/lib/clientUi";
 import {
   SERVICE_TYPE_BADGE,
@@ -12,6 +13,7 @@ import {
   dueDateColorClass,
   type ServiceType,
 } from "@/lib/serviceUi";
+import type { ServiceAlerts } from "@/hooks/useServiceAlerts";
 
 export interface ServiceCardData {
   id: string;
@@ -28,9 +30,10 @@ interface Props {
   service: ServiceCardData;
   onOpen: (id: string) => void;
   draggable?: boolean;
+  alerts?: ServiceAlerts;
 }
 
-function ServiceCardImpl({ service, onOpen, draggable = true }: Props) {
+function ServiceCardImpl({ service, onOpen, draggable = true, alerts }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: service.id,
     disabled: !draggable,
@@ -41,14 +44,16 @@ function ServiceCardImpl({ service, onOpen, draggable = true }: Props) {
     ? { transform: CSS.Translate.toString(transform), zIndex: 50 }
     : undefined;
 
+  // Show alert badges only for escritura services (the only type with detailed docs)
+  const showAlerts = service.type === "escritura" && alerts;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      onClick={(e) => {
-        // Avoid opening when ending a drag
+      onClick={() => {
         if (isDragging) return;
         onOpen(service.id);
       }}
@@ -61,17 +66,55 @@ function ServiceCardImpl({ service, onOpen, draggable = true }: Props) {
         <Badge className={cn("rounded-md text-[10px] font-semibold uppercase", SERVICE_TYPE_BADGE[service.type])}>
           {SERVICE_TYPE_LABEL[service.type]}
         </Badge>
-        <button
-          type="button"
-          className="rounded p-1 text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:bg-muted"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpen(service.id);
-          }}
-        >
-          <MoreVertical className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-1">
+          {showAlerts && (
+            <TooltipProvider delayDuration={200}>
+              {alerts.hasExpired && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Documento vencido</TooltipContent>
+                </Tooltip>
+              )}
+              {!alerts.hasExpired && alerts.expiringSoon && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Documento vence em breve</TooltipContent>
+                </Tooltip>
+              )}
+              {!alerts.hasExpired && !alerts.expiringSoon && alerts.complete && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Documentação completa</TooltipContent>
+                </Tooltip>
+              )}
+              {!alerts.hasExpired && !alerts.expiringSoon && !alerts.complete && alerts.incomplete && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ListChecks className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Documentação &lt; 50% completa</TooltipContent>
+                </Tooltip>
+              )}
+            </TooltipProvider>
+          )}
+          <button
+            type="button"
+            className="rounded p-1 text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:bg-muted"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen(service.id);
+            }}
+          >
+            <MoreVertical className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       <h4 className="mb-1 line-clamp-2 text-sm font-medium leading-snug">
@@ -110,7 +153,6 @@ function ServiceCardImpl({ service, onOpen, draggable = true }: Props) {
 }
 
 export const ServiceCard = memo(ServiceCardImpl, (prev, next) => {
-  // Skip re-render unless service identity / mutable fields or callback changes
   return (
     prev.onOpen === next.onOpen &&
     prev.draggable === next.draggable &&
@@ -119,6 +161,10 @@ export const ServiceCard = memo(ServiceCardImpl, (prev, next) => {
     prev.service.due_date === next.service.due_date &&
     prev.service.pasta_fisica === next.service.pasta_fisica &&
     prev.service.client_name === next.service.client_name &&
-    prev.service.assigned_name === next.service.assigned_name
+    prev.service.assigned_name === next.service.assigned_name &&
+    prev.alerts?.hasExpired === next.alerts?.hasExpired &&
+    prev.alerts?.expiringSoon === next.alerts?.expiringSoon &&
+    prev.alerts?.complete === next.alerts?.complete &&
+    prev.alerts?.incomplete === next.alerts?.incomplete
   );
 });

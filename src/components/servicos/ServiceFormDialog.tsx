@@ -408,6 +408,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                         <EscrituraForm
                           value={customFields as EscrituraFields}
                           onChange={(v) => setCustomFields(v)}
+                          serviceId={service?.id ?? null}
                         />
                       </SectionsWrapper>
                     </div>
