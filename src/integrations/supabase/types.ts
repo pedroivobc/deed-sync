@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_contacts: {
+        Row: {
+          channel: Database["public"]["Enums"]["contact_channel"]
+          client_id: string
+          contact_date: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["contact_channel"]
+          client_id: string
+          contact_date?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["contact_channel"]
+          client_id?: string
+          contact_date?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -371,6 +416,12 @@ export type Database = {
         | "outros"
       client_status: "ativo" | "inativo" | "vip" | "risco"
       client_type: "PF" | "PJ"
+      contact_channel:
+        | "whatsapp"
+        | "telefone"
+        | "email"
+        | "presencial"
+        | "outros"
       contact_pref: "whatsapp" | "telefone" | "email" | "presencial"
       finance_status: "pago" | "pendente"
       finance_type: "receita" | "despesa"
@@ -524,6 +575,13 @@ export const Constants = {
       ],
       client_status: ["ativo", "inativo", "vip", "risco"],
       client_type: ["PF", "PJ"],
+      contact_channel: [
+        "whatsapp",
+        "telefone",
+        "email",
+        "presencial",
+        "outros",
+      ],
       contact_pref: ["whatsapp", "telefone", "email", "presencial"],
       finance_status: ["pago", "pendente"],
       finance_type: ["receita", "despesa"],
