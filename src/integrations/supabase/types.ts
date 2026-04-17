@@ -160,7 +160,11 @@ export type Database = {
           created_by: string | null
           date: string
           description: string
+          document_number: string | null
+          due_date: string | null
           id: string
+          notes: string | null
+          payment_method: string | null
           service_id: string | null
           status: Database["public"]["Enums"]["finance_status"]
           type: Database["public"]["Enums"]["finance_type"]
@@ -174,7 +178,11 @@ export type Database = {
           created_by?: string | null
           date: string
           description: string
+          document_number?: string | null
+          due_date?: string | null
           id?: string
+          notes?: string | null
+          payment_method?: string | null
           service_id?: string | null
           status?: Database["public"]["Enums"]["finance_status"]
           type: Database["public"]["Enums"]["finance_type"]
@@ -188,7 +196,11 @@ export type Database = {
           created_by?: string | null
           date?: string
           description?: string
+          document_number?: string | null
+          due_date?: string | null
           id?: string
+          notes?: string | null
+          payment_method?: string | null
           service_id?: string | null
           status?: Database["public"]["Enums"]["finance_status"]
           type?: Database["public"]["Enums"]["finance_type"]
