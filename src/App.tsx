@@ -14,6 +14,7 @@ import CRM from "./pages/CRM";
 import Servicos from "./pages/Servicos";
 import Financeiro from "./pages/Financeiro";
 import Configuracoes from "./pages/Configuracoes";
+import Sobre from "./pages/Sobre";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient({
@@ -51,6 +52,7 @@ const App = () => (
                 }
               />
               <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+              <Route path="/sobre" element={<ProtectedRoute><Sobre /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
