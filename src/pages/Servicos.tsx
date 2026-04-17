@@ -43,6 +43,8 @@ import { getInitials } from "@/lib/clientUi";
 import { KanbanColumn } from "@/components/servicos/KanbanColumn";
 import { ServiceFormDialog } from "@/components/servicos/ServiceFormDialog";
 import type { ServiceCardData } from "@/components/servicos/ServiceCard";
+import { useServiceAlerts } from "@/hooks/useServiceAlerts";
+import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
@@ -161,6 +163,13 @@ export default function Servicos() {
     });
     return g;
   }, [filtered]);
+
+  // Alerts for escritura services (badges on cards/rows)
+  const escrituraIds = useMemo(
+    () => filtered.filter((s) => s.type === "escritura").map((s) => s.id),
+    [filtered]
+  );
+  const alertsMap = useServiceAlerts(escrituraIds);
 
   // Sorted list (lista view)
   const sorted = useMemo(() => {
@@ -396,6 +405,7 @@ export default function Servicos() {
                   services={grouped[s]}
                   onOpen={handleOpenEdit}
                   virtualize={services.length > 50}
+                  alertsMap={alertsMap}
                 />
               ))}
             </div>
