@@ -1,4 +1,4 @@
-import { Check, ExternalLink } from "lucide-react";
+import { ExternalLink, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
@@ -16,24 +16,17 @@ import { maskPhoneBR } from "@/lib/masks";
 
 import { FormSection, FieldLabel } from "../FormSection";
 import { MoneyInput } from "../MoneyInput";
+import { EscrituraDocs } from "../docs/EscrituraDocs";
 import { type EscrituraFields, TIPO_ESCRITURA_OPTIONS } from "@/lib/serviceFields";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface Props {
   value: EscrituraFields;
   onChange: (v: EscrituraFields) => void;
+  serviceId: string | null;
 }
 
-const docItems: { key: keyof EscrituraFields["documentacao"]; label: string }[] = [
-  { key: "certidoes_estado_civil", label: "Certidões de Estado Civil / Simplificada" },
-  { key: "certidoes_internet", label: "Certidões Internet" },
-  { key: "cndi", label: "CNDI (Certidão Negativa de Débitos Imobiliários)" },
-  { key: "docs_compradora", label: "Documentos da parte compradora" },
-  { key: "docs_vendedora", label: "Documentos da parte vendedora" },
-  { key: "docs_imovel", label: "Documentos do imóvel" },
-];
-
-export function EscrituraForm({ value, onChange }: Props) {
+export function EscrituraForm({ value, onChange, serviceId }: Props) {
   const { can } = usePermissions();
   const canSeeFinancial = can("view_service_financial");
   const set = <K extends keyof EscrituraFields>(section: K, partial: Partial<EscrituraFields[K]>) => {
@@ -41,16 +34,40 @@ export function EscrituraForm({ value, onChange }: Props) {
   };
 
   const showInterveniencia = value.processo_contrato.tera_interveniencia === "sim";
-  const showItbi = !!value.documentacao;
   const itbiEmitida = !!value.financeiro.guia_itbi_emitida;
+
+  // Detect legacy data: any of the old checkboxes was true
+  const legacyDoc = value.documentacao;
+  const hasLegacyDoc = !!(
+    legacyDoc?.certidoes_estado_civil ||
+    legacyDoc?.certidoes_internet ||
+    legacyDoc?.cndi ||
+    legacyDoc?.docs_compradora ||
+    legacyDoc?.docs_vendedora ||
+    legacyDoc?.docs_imovel
+  );
 
   const dataItbi = value.financeiro.data_emissao_itbi
     ? new Date(value.financeiro.data_emissao_itbi) : null;
 
+  const clearLegacyDoc = () => {
+    set("documentacao", {
+      certidoes_estado_civil: false,
+      certidoes_internet: false,
+      cndi: false,
+      docs_compradora: false,
+      docs_vendedora: false,
+      docs_imovel: false,
+    });
+  };
+
   return (
     <div className="space-y-5">
-      {/* Partes Envolvidas */}
-      <FormSection title="Partes Envolvidas" id="section-partes_envolvidas">
+      {/* Partes Envolvidas (campos originais — mantidos como resumo livre; as Partes detalhadas vão na nova seção abaixo) */}
+      <FormSection title="Resumo das Partes (livre)" id="section-partes_envolvidas">
+        <p className="mb-3 text-xs text-muted-foreground">
+          Use este resumo para anotações rápidas. O cadastro detalhado das partes (com CPF, certidões etc.) está na seção “Documentação Detalhada” abaixo.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <FieldLabel>Compradora</FieldLabel>
@@ -79,50 +96,44 @@ export function EscrituraForm({ value, onChange }: Props) {
               onChange={(e) => set("partes_envolvidas", { telefone_vendedor: maskPhoneBR(e.target.value) })}
               placeholder="(00) 00000-0000" />
           </div>
-          <div />
-          <div>
-            <FieldLabel>E-mail comprador</FieldLabel>
-            <Input type="email" value={value.partes_envolvidas.email_comprador ?? ""}
-              onChange={(e) => set("partes_envolvidas", { email_comprador: e.target.value })} />
-          </div>
-          <div>
-            <FieldLabel>E-mail vendedor</FieldLabel>
-            <Input type="email" value={value.partes_envolvidas.email_vendedor ?? ""}
-              onChange={(e) => set("partes_envolvidas", { email_vendedor: e.target.value })} />
-          </div>
-          <div className="md:col-span-2">
-            <FieldLabel>Se houver mais de um comprador, informar</FieldLabel>
-            <Textarea rows={2} value={value.partes_envolvidas.multiplos_compradores ?? ""}
-              onChange={(e) => set("partes_envolvidas", { multiplos_compradores: e.target.value })} />
-          </div>
         </div>
       </FormSection>
 
-      {/* Documentação */}
-      <FormSection title="Documentação" id="section-documentacao">
-        <div className="grid gap-3 md:grid-cols-2">
-          {docItems.map((item) => {
-            const checked = !!value.documentacao[item.key];
-            return (
-              <label key={item.key as string} className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 text-sm hover:bg-muted/40">
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={(v) => set("documentacao", { [item.key]: !!v } as Partial<EscrituraFields["documentacao"]>)}
-                />
-                <span className="flex-1">{item.label}</span>
-                {checked && <Check className="h-4 w-4 text-success" />}
-              </label>
-            );
-          })}
-        </div>
+      {/* NOVA Documentação Detalhada (substitui a antiga seção de checkboxes) */}
+      <FormSection title="Documentação Detalhada" id="section-documentacao">
+        {hasLegacyDoc && (
+          <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Estrutura antiga detectada</p>
+                  <p className="text-xs text-muted-foreground">
+                    Este serviço foi cadastrado com checkboxes simples. A documentação agora é gerenciada por partes, certidões e prazos detalhados.
+                  </p>
+                </div>
+                <Button type="button" size="sm" variant="outline" onClick={clearLegacyDoc}>
+                  Limpar marcações antigas
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <EscrituraDocs
+          serviceId={serviceId}
+          imovel={value.imovel}
+          onImovelChange={(v) => set("imovel", v)}
+        />
+
         <div className="mt-4">
-          <FieldLabel>Observações sobre a documentação</FieldLabel>
+          <FieldLabel>Observações gerais sobre a documentação</FieldLabel>
           <Textarea rows={2} value={value.documentacao.observacoes ?? ""}
             onChange={(e) => set("documentacao", { observacoes: e.target.value })} />
         </div>
       </FormSection>
 
-      {/* Imóvel */}
+      {/* Imóvel — mantém os campos básicos editáveis aqui também */}
       <FormSection title="Imóvel" id="section-imovel">
         <div className="grid gap-4 md:grid-cols-3">
           <div>
@@ -236,8 +247,11 @@ export function EscrituraForm({ value, onChange }: Props) {
               <label className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 text-sm">
                 <Checkbox checked={itbiEmitida}
                   onCheckedChange={(v) => set("financeiro", { guia_itbi_emitida: !!v })} />
-                Guia de ITBI emitida
+                Guia de ITBI emitida (resumo)
               </label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Os dados completos do ITBI estão na seção “Documentação Detalhada”.
+              </p>
             </div>
             {itbiEmitida && (
               <>
