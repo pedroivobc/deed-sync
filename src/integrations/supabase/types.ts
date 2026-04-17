@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"]
+          created_at: string
+          id: string
+          ip_address: string | null
+          payload: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action"]
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action"]
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_contacts: {
         Row: {
           channel: Database["public"]["Enums"]["contact_channel"]
@@ -230,6 +274,53 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          link: string | null
+          read_at: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -378,6 +469,59 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          email_daily_digest: boolean
+          email_followup_reminders: boolean
+          email_new_assignments: boolean
+          email_overdue_alerts: boolean
+          language: string
+          monthly_revenue_goal: number | null
+          recent_searches: Json
+          theme: string
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_daily_digest?: boolean
+          email_followup_reminders?: boolean
+          email_new_assignments?: boolean
+          email_overdue_alerts?: boolean
+          language?: string
+          monthly_revenue_goal?: number | null
+          recent_searches?: Json
+          theme?: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_daily_digest?: boolean
+          email_followup_reminders?: boolean
+          email_new_assignments?: boolean
+          email_overdue_alerts?: boolean
+          language?: string
+          monthly_revenue_goal?: number | null
+          recent_searches?: Json
+          theme?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -416,6 +560,7 @@ export type Database = {
     }
     Enums: {
       app_role: "administrador" | "gerente" | "colaborador"
+      audit_action: "create" | "update" | "delete" | "login" | "logout"
       client_category: "regular" | "recorrente" | "premium" | "unico"
       client_origin:
         | "indicacao"
@@ -437,6 +582,7 @@ export type Database = {
       contact_pref: "whatsapp" | "telefone" | "email" | "presencial"
       finance_status: "pago" | "pendente"
       finance_type: "receita" | "despesa"
+      notification_type: "critical" | "warning" | "info" | "success"
       service_stage:
         | "entrada"
         | "documentacao"
@@ -574,6 +720,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["administrador", "gerente", "colaborador"],
+      audit_action: ["create", "update", "delete", "login", "logout"],
       client_category: ["regular", "recorrente", "premium", "unico"],
       client_origin: [
         "indicacao",
@@ -597,6 +744,7 @@ export const Constants = {
       contact_pref: ["whatsapp", "telefone", "email", "presencial"],
       finance_status: ["pago", "pendente"],
       finance_type: ["receita", "despesa"],
+      notification_type: ["critical", "warning", "info", "success"],
       service_stage: [
         "entrada",
         "documentacao",

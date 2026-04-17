@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
@@ -18,9 +19,10 @@ export function Topbar({ title }: Props) {
         <h1 className="font-display text-2xl font-semibold leading-none">{title}</h1>
         <span className="mt-1 text-xs capitalize text-muted-foreground">{today}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <NotificationsBell />
         <ThemeToggle />
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+        <div className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
           {initial}
         </div>
       </div>
