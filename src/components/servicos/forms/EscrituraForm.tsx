@@ -17,6 +17,7 @@ import { maskPhoneBR } from "@/lib/masks";
 import { FormSection, FieldLabel } from "../FormSection";
 import { MoneyInput } from "../MoneyInput";
 import { type EscrituraFields, TIPO_ESCRITURA_OPTIONS } from "@/lib/serviceFields";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Props {
   value: EscrituraFields;
@@ -33,6 +34,8 @@ const docItems: { key: keyof EscrituraFields["documentacao"]; label: string }[] 
 ];
 
 export function EscrituraForm({ value, onChange }: Props) {
+  const { can } = usePermissions();
+  const canSeeFinancial = can("view_service_financial");
   const set = <K extends keyof EscrituraFields>(section: K, partial: Partial<EscrituraFields[K]>) => {
     onChange({ ...value, [section]: { ...value[section], ...partial } });
   };
@@ -215,53 +218,55 @@ export function EscrituraForm({ value, onChange }: Props) {
         </div>
       </FormSection>
 
-      {/* Financeiro */}
-      <FormSection title="Financeiro" id="section-financeiro">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <FieldLabel required>Valor declarado de compra</FieldLabel>
-            <MoneyInput value={value.financeiro.valor_compra ?? null}
-              onChange={(n) => set("financeiro", { valor_compra: n })} />
+      {/* Financeiro — oculto para perfis sem permissão de ver valores */}
+      {canSeeFinancial && (
+        <FormSection title="Financeiro" id="section-financeiro">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <FieldLabel required>Valor declarado de compra</FieldLabel>
+              <MoneyInput value={value.financeiro.valor_compra ?? null}
+                onChange={(n) => set("financeiro", { valor_compra: n })} />
+            </div>
+            <div>
+              <FieldLabel>Valor dos emolumentos cartorários</FieldLabel>
+              <MoneyInput value={value.financeiro.valor_emolumentos ?? null}
+                onChange={(n) => set("financeiro", { valor_emolumentos: n })} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <Checkbox checked={itbiEmitida}
+                  onCheckedChange={(v) => set("financeiro", { guia_itbi_emitida: !!v })} />
+                Guia de ITBI emitida
+              </label>
+            </div>
+            {itbiEmitida && (
+              <>
+                <div>
+                  <FieldLabel>Valor do ITBI</FieldLabel>
+                  <MoneyInput value={value.financeiro.valor_itbi ?? null}
+                    onChange={(n) => set("financeiro", { valor_itbi: n })} />
+                </div>
+                <div>
+                  <FieldLabel>Data de emissão da guia ITBI</FieldLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start font-normal", !dataItbi && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dataItbi ? format(dataItbi, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={dataItbi ?? undefined}
+                        onSelect={(d) => set("financeiro", { data_emissao_itbi: d ? format(d, "yyyy-MM-dd") : null })}
+                        className="pointer-events-auto p-3" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </>
+            )}
           </div>
-          <div>
-            <FieldLabel>Valor dos emolumentos cartorários</FieldLabel>
-            <MoneyInput value={value.financeiro.valor_emolumentos ?? null}
-              onChange={(n) => set("financeiro", { valor_emolumentos: n })} />
-          </div>
-          <div className="md:col-span-2">
-            <label className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 text-sm">
-              <Checkbox checked={itbiEmitida}
-                onCheckedChange={(v) => set("financeiro", { guia_itbi_emitida: !!v })} />
-              Guia de ITBI emitida
-            </label>
-          </div>
-          {itbiEmitida && (
-            <>
-              <div>
-                <FieldLabel>Valor do ITBI</FieldLabel>
-                <MoneyInput value={value.financeiro.valor_itbi ?? null}
-                  onChange={(n) => set("financeiro", { valor_itbi: n })} />
-              </div>
-              <div>
-                <FieldLabel>Data de emissão da guia ITBI</FieldLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start font-normal", !dataItbi && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dataItbi ? format(dataItbi, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={dataItbi ?? undefined}
-                      onSelect={(d) => set("financeiro", { data_emissao_itbi: d ? format(d, "yyyy-MM-dd") : null })}
-                      className="pointer-events-auto p-3" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </>
-          )}
-        </div>
-      </FormSection>
+        </FormSection>
+      )}
 
       {/* Sistemas e Controle */}
       <FormSection title="Sistemas e Controle" id="section-sistemas_controle">

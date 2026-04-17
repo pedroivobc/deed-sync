@@ -1,44 +1,86 @@
-import { LayoutDashboard, Users, Briefcase, Wallet, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Briefcase, Wallet, Settings, LogOut, Lock } from "lucide-react";
+import { NavLink as RouterNavLink } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { usePermissions, type Permission } from "@/hooks/usePermissions";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-interface NavItem { title: string; url: string; icon: typeof LayoutDashboard; managerOnly?: boolean; }
+interface NavItem {
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  /** If set, item is hidden when the user lacks this permission... */
+  permission?: Permission;
+  /** ...unless `lockedWhenDenied` is true, in which case it's shown disabled with a lock icon. */
+  lockedWhenDenied?: boolean;
+}
 
 const items: NavItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "CRM", url: "/crm", icon: Users },
   { title: "Serviços", url: "/servicos", icon: Briefcase },
-  { title: "Financeiro", url: "/financeiro", icon: Wallet, managerOnly: true },
+  { title: "Financeiro", url: "/financeiro", icon: Wallet, permission: "access_financial", lockedWhenDenied: true },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
-  const { profile, roles, signOut, isManager } = useAuth();
+  const { profile, roles, signOut } = useAuth();
+  const { can } = usePermissions();
   const roleLabel = roles[0] ?? "—";
-
-  const visibleItems = items.filter((item) => !item.managerOnly || isManager);
 
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
-      <div className="flex h-16 items-center px-5 border-b border-sidebar-border">
+      <div className="flex h-16 items-center border-b border-sidebar-border px-5">
         <Logo />
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-5">
-        {visibleItems.map((item) => (
-          <NavLink
-            key={item.url}
-            to={item.url}
-            end={item.url === "/"}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-            activeClassName="bg-primary text-primary-foreground hover:bg-primary"
-          >
-            <item.icon className="h-4 w-4" />
-            {item.title}
-          </NavLink>
-        ))}
+        <TooltipProvider delayDuration={150}>
+          {items.map((item) => {
+            const allowed = !item.permission || can(item.permission);
+
+            if (!allowed && !item.lockedWhenDenied) return null;
+
+            if (!allowed && item.lockedWhenDenied) {
+              return (
+                <Tooltip key={item.url}>
+                  <TooltipTrigger asChild>
+                    <div
+                      aria-disabled
+                      className={cn(
+                        "flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium",
+                        "text-muted-foreground/60",
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1">{item.title}</span>
+                      <Lock className="h-3.5 w-3.5" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Sem permissão</TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return (
+              <NavLink
+                key={item.url}
+                to={item.url}
+                end={item.url === "/"}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+                activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+              >
+                <item.icon className="h-4 w-4" />
+                {item.title}
+              </NavLink>
+            );
+          })}
+        </TooltipProvider>
       </nav>
 
       <div className="border-t border-sidebar-border p-4">

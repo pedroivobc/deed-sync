@@ -36,6 +36,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   SERVICE_TYPE_BADGE, SERVICE_TYPE_LABEL, STAGE_BADGE_CLASS, STAGE_LABEL,
   STAGE_ORDER, dueDateColorClass, type ServiceStage, type ServiceType,
@@ -58,7 +59,8 @@ interface ServiceFull extends ServiceRow {
 const PAGE_SIZE = 25;
 
 export default function Servicos() {
-  const { user, isAdmin, isManager } = useAuth();
+  const { user } = useAuth();
+  const { canDeleteService } = usePermissions();
 
   const [view, setView] = useState<"kanban" | "lista">("kanban");
   const [services, setServices] = useState<ServiceFull[]>([]);
@@ -245,8 +247,7 @@ export default function Servicos() {
     setFormOpen(true);
   };
 
-  const canDelete = (s: ServiceFull) =>
-    isAdmin || isManager || s.created_by === user?.id;
+  const canDelete = (s: ServiceFull) => canDeleteService(s.created_by);
 
   const confirmDelete = async () => {
     if (!toDelete) return;

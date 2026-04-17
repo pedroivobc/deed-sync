@@ -6,12 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { UserManagement } from "@/components/UserManagement";
 
 export default function Configuracoes() {
-  const { profile, refreshProfile, isAdmin } = useAuth();
+  const { profile, refreshProfile } = useAuth();
+  const { can } = usePermissions();
+  const canManageUsers = can("manage_users");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -61,12 +64,12 @@ export default function Configuracoes() {
 
   return (
     <AppLayout title="Configurações">
-      <div className={`mx-auto ${isAdmin ? "max-w-6xl" : "max-w-3xl"}`}>
+      <div className={`mx-auto ${canManageUsers ? "max-w-6xl" : "max-w-3xl"}`}>
         <Tabs defaultValue="perfil" className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="perfil">Meu Perfil</TabsTrigger>
             <TabsTrigger value="senha">Senha</TabsTrigger>
-            {isAdmin && <TabsTrigger value="usuarios">Gestão de Usuários</TabsTrigger>}
+            {canManageUsers && <TabsTrigger value="usuarios">Gestão de Usuários</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="perfil">
@@ -117,7 +120,7 @@ export default function Configuracoes() {
             </Card>
           </TabsContent>
 
-          {isAdmin && (
+          {canManageUsers && (
             <TabsContent value="usuarios">
               <UserManagement />
             </TabsContent>
