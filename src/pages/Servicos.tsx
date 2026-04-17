@@ -429,7 +429,20 @@ export default function Servicos() {
               <TableBody>
                 {paginated.map((s) => (
                   <TableRow key={s.id} className="cursor-pointer" onClick={() => handleOpenEdit(s.id)}>
-                    <TableCell className="font-medium">{s.subject}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {s.type === "escritura" && alertsMap[s.id]?.hasExpired && (
+                          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 text-destructive" aria-label="Documento vencido" />
+                        )}
+                        {s.type === "escritura" && !alertsMap[s.id]?.hasExpired && alertsMap[s.id]?.expiringSoon && (
+                          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 text-warning" aria-label="Documento vence em breve" />
+                        )}
+                        {s.type === "escritura" && !alertsMap[s.id]?.hasExpired && !alertsMap[s.id]?.expiringSoon && alertsMap[s.id]?.complete && (
+                          <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-success" aria-label="Documentação completa" />
+                        )}
+                        <span>{s.subject}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge className={cn("text-[10px] uppercase", SERVICE_TYPE_BADGE[s.type])}>
                         {SERVICE_TYPE_LABEL[s.type]}
