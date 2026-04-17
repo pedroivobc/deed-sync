@@ -25,14 +25,12 @@ import {
 } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { KanbanSkeleton, TableRowsSkeleton } from "@/components/ui/skeletons";
+import { IconAction } from "@/components/ui/icon-action";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { notify, humanizeBackendError } from "@/lib/notify";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -99,7 +97,7 @@ export default function Servicos() {
         assigned:profiles!services_assigned_to_fkey ( id, name, email )
       `)
       .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
+    if (error) notify.error(humanizeBackendError(error), { retry: loadServices });
     setServices((data as unknown as ServiceFull[]) ?? []);
     setLoading(false);
   };
@@ -220,7 +218,7 @@ export default function Servicos() {
       setServices((prev) =>
         prev.map((s) => (s.id === id ? { ...s, stage: previousStage } : s))
       );
-      toast.error("Não foi possível mover o card.");
+      notify.error("Não foi possível mover o card.", { retry: () => onDragEnd(e) });
       return;
     }
 
@@ -231,7 +229,7 @@ export default function Servicos() {
       payload: { from: previousStage, to: newStage } as never,
     });
 
-    toast.success(`Movido para ${STAGE_LABEL[newStage]}.`, { duration: 1800 });
+    notify.success(`Movido para ${STAGE_LABEL[newStage]}`);
   };
 
   const handleOpenEdit = (id: string) => {
@@ -253,9 +251,9 @@ export default function Servicos() {
     if (!toDelete) return;
     const { error } = await supabase.from("services").delete().eq("id", toDelete.id);
     if (error) {
-      toast.error(error.message);
+      notify.error(humanizeBackendError(error));
     } else {
-      toast.success("Serviço excluído.");
+      notify.success("Serviço excluído");
       setServices((prev) => prev.filter((s) => s.id !== toDelete.id));
     }
     setToDelete(null);
@@ -368,15 +366,24 @@ export default function Servicos() {
 
         {/* Content */}
         {loading ? (
-          <div className="flex gap-3 overflow-x-auto">
-            {STAGE_ORDER.map((s) => (
-              <div key={s} className="w-[320px] flex-shrink-0 space-y-2">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
-              </div>
-            ))}
-          </div>
+          view === "kanban" ? (
+            <KanbanSkeleton columns={STAGE_ORDER.length} cardsPerColumn={3} />
+          ) : (
+            <Card className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {Array.from({ length: 9 }).map((_, i) => (
+                      <TableHead key={i}>—</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRowsSkeleton rows={5} cols={9} />
+                </TableBody>
+              </Table>
+            </Card>
+          )
         ) : services.length === 0 ? (
           <EmptyState onCreate={handleNew} />
         ) : view === "kanban" ? (
@@ -446,14 +453,13 @@ export default function Servicos() {
                     </TableCell>
                     <TableCell className="text-right">
                       {canDelete(s) && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                        <IconAction
+                          label="Excluir serviço"
                           onClick={(e) => { e.stopPropagation(); setToDelete(s); }}
                           className="text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </IconAction>
                       )}
                     </TableCell>
                   </TableRow>
@@ -483,22 +489,20 @@ export default function Servicos() {
         onSaved={loadServices}
       />
 
-      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O serviço "{toDelete?.subject}" será removido permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!toDelete}
+        onOpenChange={(o) => !o && setToDelete(null)}
+        title="Excluir serviço?"
+        description={
+          <>
+            Esta ação não pode ser desfeita. O serviço{" "}
+            <strong>"{toDelete?.subject}"</strong> será removido permanentemente.
+          </>
+        }
+        confirmText="Sim, excluir"
+        loadingText="Excluindo..."
+        onConfirm={confirmDelete}
+      />
     </AppLayout>
   );
 }

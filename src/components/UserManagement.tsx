@@ -8,17 +8,16 @@ import { Card } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { TableRowsSkeleton } from "@/components/ui/skeletons";
+import { IconAction } from "@/components/ui/icon-action";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, UserPlus } from "lucide-react";
-import { toast } from "sonner";
+import { notify, humanizeBackendError } from "@/lib/notify";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -84,7 +83,7 @@ export function UserManagement() {
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (pErr || rErr) {
-      toast.error(pErr?.message ?? rErr?.message ?? "Erro ao carregar");
+      notify.error(humanizeBackendError(pErr ?? rErr), { retry: load });
       setLoading(false);
       return;
     }
@@ -113,10 +112,10 @@ export function UserManagement() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return toast.error("Nome é obrigatório.");
-    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("E-mail inválido.");
-    if (!editing && password.length < 6) return toast.error("Senha mínima de 6 caracteres.");
-    if (editing && password && password.length < 6) return toast.error("Senha mínima de 6 caracteres.");
+    if (!name.trim()) { notify.error("Nome é obrigatório."); return; }
+    if (!/^\S+@\S+\.\S+$/.test(email)) { notify.error("E-mail deve conter @ e domínio válido."); return; }
+    if (!editing && password.length < 6) { notify.error("Senha deve ter pelo menos 6 caracteres."); return; }
+    if (editing && password && password.length < 6) { notify.error("Senha deve ter pelo menos 6 caracteres."); return; }
 
     setSubmitting(true);
     const payload = editing
@@ -126,11 +125,11 @@ export function UserManagement() {
     const { data, error } = await supabase.functions.invoke("manage-users", { body: payload });
     setSubmitting(false);
 
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error ?? error?.message ?? "Falha");
+    if (error || (data as { error?: string })?.error) {
+      notify.error(humanizeBackendError((data as { error?: string })?.error ?? error?.message ?? "Falha"));
       return;
     }
-    toast.success(editing ? "Usuário atualizado." : "Usuário criado.");
+    notify.success(editing ? "Usuário atualizado" : "Usuário criado");
     setDialogOpen(false);
     load();
   };
@@ -142,11 +141,11 @@ export function UserManagement() {
       body: { action: "delete", user_id: confirmDelete.id },
     });
     setDeleting(false);
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error ?? error?.message ?? "Falha");
+    if (error || (data as { error?: string })?.error) {
+      notify.error(humanizeBackendError((data as { error?: string })?.error ?? error?.message ?? "Falha"));
       return;
     }
-    toast.success("Usuário excluído.");
+    notify.success("Usuário removido");
     setConfirmDelete(null);
     load();
   };
@@ -182,7 +181,7 @@ export function UserManagement() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRowsSkeleton rows={5} cols={6} />
             ) : sorted.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Nenhum usuário.</TableCell></TableRow>
             ) : (
@@ -199,18 +198,17 @@ export function UserManagement() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(u)} aria-label="Editar">
+                        <IconAction label="Editar usuário" onClick={() => openEdit(u)}>
                           <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="icon"
+                        </IconAction>
+                        <IconAction
+                          label={isMe ? "Você não pode excluir o próprio usuário" : "Excluir usuário"}
                           onClick={() => setConfirmDelete(u)}
                           disabled={isMe}
-                          aria-label="Excluir"
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </IconAction>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -281,27 +279,21 @@ export function UserManagement() {
       </Dialog>
 
       {/* Delete confirmation */}
-      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação removerá permanentemente <strong>{confirmDelete?.name ?? confirmDelete?.email}</strong>{" "}
-              do sistema, incluindo acesso, perfil e papéis. Não é possível desfazer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); doDelete(); }}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? "Excluindo..." : "Excluir"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+        title="Excluir usuário?"
+        description={
+          <>
+            Esta ação removerá permanentemente{" "}
+            <strong>{confirmDelete?.name ?? confirmDelete?.email}</strong> do sistema,
+            incluindo acesso, perfil e papéis. Esta ação não pode ser desfeita.
+          </>
+        }
+        confirmText="Sim, excluir"
+        loadingText="Excluindo..."
+        onConfirm={doDelete}
+      />
     </Card>
   );
 }
