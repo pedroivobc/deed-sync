@@ -10,9 +10,11 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { UserManagement } from "@/components/UserManagement";
+import { PreferencesPanel } from "@/components/PreferencesPanel";
+import { AuditLogPanel } from "@/components/AuditLogPanel";
 
 export default function Configuracoes() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, isAdmin } = useAuth();
   const { can } = usePermissions();
   const canManageUsers = can("manage_users");
   const [name, setName] = useState("");
@@ -66,9 +68,10 @@ export default function Configuracoes() {
     <AppLayout title="Configurações">
       <div className={`mx-auto ${canManageUsers ? "max-w-6xl" : "max-w-3xl"}`}>
         <Tabs defaultValue="perfil" className="w-full">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap">
             <TabsTrigger value="perfil">Meu Perfil</TabsTrigger>
             <TabsTrigger value="senha">Senha</TabsTrigger>
+            <TabsTrigger value="preferencias">Preferências</TabsTrigger>
             {canManageUsers && <TabsTrigger value="usuarios">Gestão de Usuários</TabsTrigger>}
           </TabsList>
 
@@ -120,9 +123,26 @@ export default function Configuracoes() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="preferencias">
+            <PreferencesPanel />
+          </TabsContent>
+
           {canManageUsers && (
             <TabsContent value="usuarios">
-              <UserManagement />
+              <Tabs defaultValue="lista" className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="lista">Usuários</TabsTrigger>
+                  {isAdmin && <TabsTrigger value="auditoria">Log de Auditoria</TabsTrigger>}
+                </TabsList>
+                <TabsContent value="lista">
+                  <UserManagement />
+                </TabsContent>
+                {isAdmin && (
+                  <TabsContent value="auditoria">
+                    <AuditLogPanel />
+                  </TabsContent>
+                )}
+              </Tabs>
             </TabsContent>
           )}
         </Tabs>

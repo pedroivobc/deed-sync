@@ -84,6 +84,12 @@ export function AppSidebar() {
       </nav>
 
       <div className="border-t border-sidebar-border p-4">
+        <RouterNavLink
+          to="/sobre"
+          className="mb-3 block text-center text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Sobre
+        </RouterNavLink>
         <div className="mb-3 flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground text-sm font-semibold">
             {(profile?.name ?? "U").slice(0, 1).toUpperCase()}
