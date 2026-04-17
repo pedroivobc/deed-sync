@@ -125,7 +125,10 @@ export default function CRM() {
     await supabase.from("services").update({ client_id: null }).eq("client_id", confirmDel.id);
     const { error } = await supabase.from("clients").delete().eq("id", confirmDel.id);
     setDeleting(false);
-    if (error) return notify.error(humanizeBackendError(error));
+    if (error) {
+      notify.error(humanizeBackendError(error));
+      return;
+    }
     notify.success("Cliente removido");
     setConfirmDel(null);
     load();
