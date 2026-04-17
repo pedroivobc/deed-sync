@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/command";
 import {
   Briefcase,
+  Clock,
   Home,
   LogOut,
   Moon,
@@ -19,6 +20,7 @@ import {
   Sun,
   Users,
   Wallet,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -32,6 +34,27 @@ interface SearchResult {
   to: string;
 }
 
+const HISTORY_KEY = "clemente-cmdk-history";
+const HISTORY_MAX = 5;
+
+function loadHistory(): string[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((s) => typeof s === "string").slice(0, HISTORY_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+function saveHistory(h: string[]) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, HISTORY_MAX)));
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Global command palette (Cmd/Ctrl + K).
  * Includes quick commands + debounced search across clients & services.
@@ -42,6 +65,7 @@ export function CommandPalette() {
   const [debounced, setDebounced] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState<string[]>(() => loadHistory());
   const navigate = useNavigate();
   const { user, signOut, theme, setTheme } = useAuth();
   const { can } = usePermissions();
@@ -114,6 +138,12 @@ export function CommandPalette() {
       ];
       setResults(out);
       setLoading(false);
+      // Push successful search into history
+      setHistory((prev) => {
+        const next = [debounced, ...prev.filter((q) => q !== debounced)].slice(0, HISTORY_MAX);
+        saveHistory(next);
+        return next;
+      });
     })();
     return () => {
       cancelled = true;
@@ -127,6 +157,11 @@ export function CommandPalette() {
     });
     return g;
   }, [results]);
+
+  const clearHistory = () => {
+    setHistory([]);
+    saveHistory([]);
+  };
 
   const go = (path: string) => {
     setOpen(false);
