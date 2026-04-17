@@ -142,7 +142,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     setStage(next);
   };
 
-  const onConfirmComplete = (data: { docs_delivered: boolean; final_notes: string }) => {
+  const onConfirmComplete = (data: { docs_delivered: boolean; final_notes: string; create_revenue: boolean }) => {
     if (pendingStageOnComplete) {
       setStage(pendingStageOnComplete);
       setPendingStageOnComplete(null);
@@ -153,6 +153,12 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     setCustomFields({ ...customFields });
     toast.success("Conclusão preparada — clique em Salvar para confirmar.");
   };
+
+  // Suggested revenue (Escritura): valor de compra
+  const suggestedRevenue =
+    type === "escritura"
+      ? (((customFields as EscrituraFields)?.financeiro?.valor_compra ?? null) as number | null)
+      : null;
 
   const logChange = async (
     serviceId: string,
@@ -229,6 +235,33 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       }
       if (pendingCompletion) {
         await logChange(serviceId, "completed", pendingCompletion as unknown as Record<string, unknown>);
+
+        // Auto-create revenue entry for Escritura when requested
+        if (
+          (pendingCompletion as { create_revenue?: boolean }).create_revenue &&
+          type === "escritura"
+        ) {
+          const valor = (cf.financeiro as Record<string, unknown> | undefined)?.valor_compra as number | undefined;
+          if (valor && valor > 0) {
+            const today = new Date().toISOString().slice(0, 10);
+            const { error: finErr } = await supabase.from("finance_entries").insert({
+              type: "receita",
+              status: "pago",
+              amount: valor,
+              description: `Escritura — ${subject.trim()}`,
+              category: "Escritura",
+              date: today,
+              service_id: serviceId,
+              client_id: client.id,
+              created_by: user?.id ?? null,
+            });
+            if (finErr) {
+              toast.error("Serviço concluído, mas falhou ao criar receita: " + finErr.message);
+            } else {
+              toast.success("Receita vinculada criada no Financeiro.");
+            }
+          }
+        }
       }
     }
 
@@ -435,6 +468,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
           if (!o) setPendingStageOnComplete(null);
         }}
         onConfirm={onConfirmComplete}
+        suggestedRevenue={suggestedRevenue}
       />
     </>
   );

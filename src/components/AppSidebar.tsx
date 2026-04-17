@@ -4,17 +4,21 @@ import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
-const items = [
+interface NavItem { title: string; url: string; icon: typeof LayoutDashboard; managerOnly?: boolean; }
+
+const items: NavItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "CRM", url: "/crm", icon: Users },
   { title: "Serviços", url: "/servicos", icon: Briefcase },
-  { title: "Financeiro", url: "/financeiro", icon: Wallet },
+  { title: "Financeiro", url: "/financeiro", icon: Wallet, managerOnly: true },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
-  const { profile, roles, signOut } = useAuth();
+  const { profile, roles, signOut, isManager } = useAuth();
   const roleLabel = roles[0] ?? "—";
+
+  const visibleItems = items.filter((item) => !item.managerOnly || isManager);
 
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
@@ -23,7 +27,7 @@ export function AppSidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-5">
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.url}
             to={item.url}

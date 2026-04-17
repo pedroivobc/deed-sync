@@ -1,20 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { formatBRL } from "@/lib/money";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (data: { docs_delivered: boolean; final_notes: string }) => void;
+  onConfirm: (data: {
+    docs_delivered: boolean;
+    final_notes: string;
+    create_revenue: boolean;
+  }) => void;
+  /** Valor declarado da escritura (se houver) — habilita oferta de criação de receita */
+  suggestedRevenue?: number | null;
 }
 
-export function CompleteConfirmDialog({ open, onOpenChange, onConfirm }: Props) {
+export function CompleteConfirmDialog({ open, onOpenChange, onConfirm, suggestedRevenue }: Props) {
   const [docs, setDocs] = useState(false);
   const [notes, setNotes] = useState("");
+  const [createRevenue, setCreateRevenue] = useState(true);
+
+  useEffect(() => {
+    if (open) {
+      setDocs(false);
+      setNotes("");
+      setCreateRevenue(true);
+    }
+  }, [open]);
+
+  const hasSuggestion = !!suggestedRevenue && suggestedRevenue > 0;
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -30,6 +48,17 @@ export function CompleteConfirmDialog({ open, onOpenChange, onConfirm }: Props) 
             <Checkbox checked={docs} onCheckedChange={(v) => setDocs(!!v)} />
             <span>Todos os documentos foram entregues ao cliente?</span>
           </label>
+
+          {hasSuggestion && (
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-accent/40 bg-accent/10 p-3 text-sm">
+              <Checkbox checked={createRevenue} onCheckedChange={(v) => setCreateRevenue(!!v)} />
+              <span>
+                Criar lançamento de <strong>receita</strong> de{" "}
+                <strong>{formatBRL(suggestedRevenue!)}</strong> vinculado a este serviço?
+              </span>
+            </label>
+          )}
+
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
               Observações finais (opcional)
@@ -39,7 +68,11 @@ export function CompleteConfirmDialog({ open, onOpenChange, onConfirm }: Props) 
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={() => onConfirm({ docs_delivered: docs, final_notes: notes })}>
+          <AlertDialogAction
+            onClick={() =>
+              onConfirm({ docs_delivered: docs, final_notes: notes, create_revenue: createRevenue && hasSuggestion })
+            }
+          >
             Confirmar conclusão
           </AlertDialogAction>
         </AlertDialogFooter>
