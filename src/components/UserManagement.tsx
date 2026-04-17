@@ -83,7 +83,7 @@ export function UserManagement() {
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (pErr || rErr) {
-      toast.error(pErr?.message ?? rErr?.message ?? "Erro ao carregar");
+      notify.error(humanizeBackendError(pErr ?? rErr), { retry: load });
       setLoading(false);
       return;
     }
@@ -112,10 +112,10 @@ export function UserManagement() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return toast.error("Nome é obrigatório.");
-    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("E-mail inválido.");
-    if (!editing && password.length < 6) return toast.error("Senha mínima de 6 caracteres.");
-    if (editing && password && password.length < 6) return toast.error("Senha mínima de 6 caracteres.");
+    if (!name.trim()) { notify.error("Nome é obrigatório."); return; }
+    if (!/^\S+@\S+\.\S+$/.test(email)) { notify.error("E-mail deve conter @ e domínio válido."); return; }
+    if (!editing && password.length < 6) { notify.error("Senha deve ter pelo menos 6 caracteres."); return; }
+    if (editing && password && password.length < 6) { notify.error("Senha deve ter pelo menos 6 caracteres."); return; }
 
     setSubmitting(true);
     const payload = editing
@@ -125,11 +125,11 @@ export function UserManagement() {
     const { data, error } = await supabase.functions.invoke("manage-users", { body: payload });
     setSubmitting(false);
 
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error ?? error?.message ?? "Falha");
+    if (error || (data as { error?: string })?.error) {
+      notify.error(humanizeBackendError((data as { error?: string })?.error ?? error?.message ?? "Falha"));
       return;
     }
-    toast.success(editing ? "Usuário atualizado." : "Usuário criado.");
+    notify.success(editing ? "Usuário atualizado" : "Usuário criado");
     setDialogOpen(false);
     load();
   };
@@ -141,11 +141,11 @@ export function UserManagement() {
       body: { action: "delete", user_id: confirmDelete.id },
     });
     setDeleting(false);
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error ?? error?.message ?? "Falha");
+    if (error || (data as { error?: string })?.error) {
+      notify.error(humanizeBackendError((data as { error?: string })?.error ?? error?.message ?? "Falha"));
       return;
     }
-    toast.success("Usuário excluído.");
+    notify.success("Usuário removido");
     setConfirmDelete(null);
     load();
   };
