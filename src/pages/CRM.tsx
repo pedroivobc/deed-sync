@@ -68,7 +68,7 @@ export default function CRM() {
       supabase.from("clients").select("*").order("created_at", { ascending: false }),
       supabase.from("services").select("client_id"),
     ]);
-    if (error) toast.error(error.message);
+    if (error) notify.error(humanizeBackendError(error), { retry: load });
     setRows((clients ?? []) as ClientRow[]);
     const counts: Record<string, number> = {};
     (svcs ?? []).forEach((s) => {
@@ -125,8 +125,8 @@ export default function CRM() {
     await supabase.from("services").update({ client_id: null }).eq("client_id", confirmDel.id);
     const { error } = await supabase.from("clients").delete().eq("id", confirmDel.id);
     setDeleting(false);
-    if (error) return toast.error(error.message);
-    toast.success("Cliente excluído.");
+    if (error) return notify.error(humanizeBackendError(error));
+    notify.success("Cliente removido");
     setConfirmDel(null);
     load();
   };
@@ -191,9 +191,23 @@ export default function CRM() {
       {/* Table */}
       <Card className="rounded-2xl shadow-soft">
         {loading ? (
-          <div className="space-y-2 p-4">
-            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Contato</TableHead>
+                <TableHead>Origem</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Serviços</TableHead>
+                <TableHead>Próximo follow-up</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRowsSkeleton rows={5} cols={8} />
+            </TableBody>
+          </Table>
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 text-accent">
@@ -246,21 +260,20 @@ export default function CRM() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openView(c)} aria-label="Ver">
+                          <IconAction label="Ver detalhes" onClick={() => openView(c)}>
                             <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(c)} aria-label="Editar">
+                          </IconAction>
+                          <IconAction label="Editar cliente" onClick={() => openEdit(c)}>
                             <Pencil className="h-4 w-4" />
-                          </Button>
+                          </IconAction>
                           {can("delete_client") && (
-                            <Button
-                              variant="ghost" size="icon"
+                            <IconAction
+                              label="Excluir cliente"
                               onClick={() => setConfirmDel(c)}
                               className="text-destructive hover:text-destructive"
-                              aria-label="Excluir"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </IconAction>
                           )}
                         </div>
                       </TableCell>
@@ -303,28 +316,21 @@ export default function CRM() {
         onChanged={load}
       />
 
-      <AlertDialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação removerá permanentemente <strong>{confirmDel?.name}</strong>. Os serviços
-              vinculados <strong>NÃO serão apagados</strong> — apenas ficarão sem cliente associado.
-              Tem certeza?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); doDelete(); }}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? "Excluindo..." : "Excluir cliente"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!confirmDel}
+        onOpenChange={(o) => !o && setConfirmDel(null)}
+        title="Excluir cliente?"
+        description={
+          <>
+            Esta ação removerá permanentemente <strong>{confirmDel?.name}</strong>. Os serviços
+            vinculados <strong>NÃO serão apagados</strong> — apenas ficarão sem cliente associado.
+            Esta ação não pode ser desfeita.
+          </>
+        }
+        confirmText="Sim, excluir"
+        loadingText="Excluindo..."
+        onConfirm={doDelete}
+      />
     </AppLayout>
   );
 }
