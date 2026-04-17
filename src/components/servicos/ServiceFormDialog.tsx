@@ -235,6 +235,33 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       }
       if (pendingCompletion) {
         await logChange(serviceId, "completed", pendingCompletion as unknown as Record<string, unknown>);
+
+        // Auto-create revenue entry for Escritura when requested
+        if (
+          (pendingCompletion as { create_revenue?: boolean }).create_revenue &&
+          type === "escritura"
+        ) {
+          const valor = (cf.financeiro as Record<string, unknown> | undefined)?.valor_compra as number | undefined;
+          if (valor && valor > 0) {
+            const today = new Date().toISOString().slice(0, 10);
+            const { error: finErr } = await supabase.from("finance_entries").insert({
+              type: "receita",
+              status: "pago",
+              amount: valor,
+              description: `Escritura — ${subject.trim()}`,
+              category: "Escritura",
+              date: today,
+              service_id: serviceId,
+              client_id: client.id,
+              created_by: user?.id ?? null,
+            });
+            if (finErr) {
+              toast.error("Serviço concluído, mas falhou ao criar receita: " + finErr.message);
+            } else {
+              toast.success("Receita vinculada criada no Financeiro.");
+            }
+          }
+        }
       }
     }
 
