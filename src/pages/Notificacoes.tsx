@@ -319,7 +319,7 @@ export default function Notificacoes() {
         description={`${selected.size} notificação(ões) serão removidas permanentemente.`}
         confirmText="Excluir"
         loadingText="Excluindo..."
-        onConfirm={deleteSelected}
+        onConfirm={async () => { await deleteSelected(); }}
       />
     </AppLayout>
   );
