@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Calendar, Folder, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { useDraggable } from "@dnd-kit/core";
@@ -29,7 +30,7 @@ interface Props {
   draggable?: boolean;
 }
 
-export function ServiceCard({ service, onOpen, draggable = true }: Props) {
+function ServiceCardImpl({ service, onOpen, draggable = true }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: service.id,
     disabled: !draggable,
@@ -107,3 +108,17 @@ export function ServiceCard({ service, onOpen, draggable = true }: Props) {
     </div>
   );
 }
+
+export const ServiceCard = memo(ServiceCardImpl, (prev, next) => {
+  // Skip re-render unless service identity / mutable fields or callback changes
+  return (
+    prev.onOpen === next.onOpen &&
+    prev.draggable === next.draggable &&
+    prev.service.id === next.service.id &&
+    prev.service.subject === next.service.subject &&
+    prev.service.due_date === next.service.due_date &&
+    prev.service.pasta_fisica === next.service.pasta_fisica &&
+    prev.service.client_name === next.service.client_name &&
+    prev.service.assigned_name === next.service.assigned_name
+  );
+});

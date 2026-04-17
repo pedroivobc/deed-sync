@@ -390,7 +390,13 @@ export default function Servicos() {
           <DndContext sensors={sensors} onDragEnd={onDragEnd}>
             <div className="flex gap-3 overflow-x-auto pb-4">
               {STAGE_ORDER.map((s) => (
-                <KanbanColumn key={s} stage={s} services={grouped[s]} onOpen={handleOpenEdit} />
+                <KanbanColumn
+                  key={s}
+                  stage={s}
+                  services={grouped[s]}
+                  onOpen={handleOpenEdit}
+                  virtualize={services.length > 50}
+                />
               ))}
             </div>
           </DndContext>
