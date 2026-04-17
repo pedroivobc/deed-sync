@@ -393,6 +393,395 @@ export type Database = {
           },
         ]
       }
+      service_civil_certificates: {
+        Row: {
+          certificate_type: Database["public"]["Enums"]["civil_certificate_type"]
+          complementary_payment: number | null
+          created_at: string
+          expiration_date: string | null
+          file_url: string | null
+          id: string
+          initial_payment: number | null
+          is_issued: boolean
+          issued_date: string | null
+          notes: string | null
+          party_id: string
+          request_date: string | null
+          service_id: string
+          status: Database["public"]["Enums"]["civil_certificate_status"]
+          total_paid: number | null
+          updated_at: string
+          validity_days: number
+        }
+        Insert: {
+          certificate_type: Database["public"]["Enums"]["civil_certificate_type"]
+          complementary_payment?: number | null
+          created_at?: string
+          expiration_date?: string | null
+          file_url?: string | null
+          id?: string
+          initial_payment?: number | null
+          is_issued?: boolean
+          issued_date?: string | null
+          notes?: string | null
+          party_id: string
+          request_date?: string | null
+          service_id: string
+          status?: Database["public"]["Enums"]["civil_certificate_status"]
+          total_paid?: number | null
+          updated_at?: string
+          validity_days?: number
+        }
+        Update: {
+          certificate_type?: Database["public"]["Enums"]["civil_certificate_type"]
+          complementary_payment?: number | null
+          created_at?: string
+          expiration_date?: string | null
+          file_url?: string | null
+          id?: string
+          initial_payment?: number | null
+          is_issued?: boolean
+          issued_date?: string | null
+          notes?: string | null
+          party_id?: string
+          request_date?: string | null
+          service_id?: string
+          status?: Database["public"]["Enums"]["civil_certificate_status"]
+          total_paid?: number | null
+          updated_at?: string
+          validity_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_civil_certificates_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "service_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_civil_certificates_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_internet_certificates: {
+        Row: {
+          certificate_type: Database["public"]["Enums"]["internet_certificate_type"]
+          comarca: string | null
+          created_at: string
+          custom_name: string | null
+          expected_validity_date: string | null
+          file_url: string | null
+          id: string
+          infosimples_request_id: string | null
+          issued_date: string | null
+          issuer_url: string | null
+          notes: string | null
+          party_id: string | null
+          protocol_number: string | null
+          request_date: string | null
+          service_id: string
+          state: string | null
+          status: Database["public"]["Enums"]["internet_certificate_status"]
+          updated_at: string
+        }
+        Insert: {
+          certificate_type: Database["public"]["Enums"]["internet_certificate_type"]
+          comarca?: string | null
+          created_at?: string
+          custom_name?: string | null
+          expected_validity_date?: string | null
+          file_url?: string | null
+          id?: string
+          infosimples_request_id?: string | null
+          issued_date?: string | null
+          issuer_url?: string | null
+          notes?: string | null
+          party_id?: string | null
+          protocol_number?: string | null
+          request_date?: string | null
+          service_id: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["internet_certificate_status"]
+          updated_at?: string
+        }
+        Update: {
+          certificate_type?: Database["public"]["Enums"]["internet_certificate_type"]
+          comarca?: string | null
+          created_at?: string
+          custom_name?: string | null
+          expected_validity_date?: string | null
+          file_url?: string | null
+          id?: string
+          infosimples_request_id?: string | null
+          issued_date?: string | null
+          issuer_url?: string | null
+          notes?: string | null
+          party_id?: string | null
+          protocol_number?: string | null
+          request_date?: string | null
+          service_id?: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["internet_certificate_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_internet_certificates_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "service_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_internet_certificates_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_parties: {
+        Row: {
+          address: string | null
+          cnh: string | null
+          company_state: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          email: string | null
+          has_digital_certificate: boolean | null
+          id: string
+          marital_status: string | null
+          name: string
+          nationality: string | null
+          notes: string | null
+          person_type: Database["public"]["Enums"]["party_person_type"]
+          phone: string | null
+          profession: string | null
+          rg: string | null
+          role: Database["public"]["Enums"]["party_role"]
+          service_id: string
+          signature_mode: Database["public"]["Enums"]["signature_mode"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          cnh?: string | null
+          company_state?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          has_digital_certificate?: boolean | null
+          id?: string
+          marital_status?: string | null
+          name: string
+          nationality?: string | null
+          notes?: string | null
+          person_type?: Database["public"]["Enums"]["party_person_type"]
+          phone?: string | null
+          profession?: string | null
+          rg?: string | null
+          role: Database["public"]["Enums"]["party_role"]
+          service_id: string
+          signature_mode?: Database["public"]["Enums"]["signature_mode"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          cnh?: string | null
+          company_state?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          has_digital_certificate?: boolean | null
+          id?: string
+          marital_status?: string | null
+          name?: string
+          nationality?: string | null
+          notes?: string | null
+          person_type?: Database["public"]["Enums"]["party_person_type"]
+          phone?: string | null
+          profession?: string | null
+          rg?: string | null
+          role?: Database["public"]["Enums"]["party_role"]
+          service_id?: string
+          signature_mode?: Database["public"]["Enums"]["signature_mode"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_parties_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_property_itbi: {
+        Row: {
+          created_at: string
+          id: string
+          is_issued: boolean
+          issuance_date: string | null
+          itbi_value: number | null
+          observations: string | null
+          payment_date: string | null
+          prefecture_url: string | null
+          protocol_date: string | null
+          protocol_number: string | null
+          service_id: string
+          status: Database["public"]["Enums"]["itbi_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_issued?: boolean
+          issuance_date?: string | null
+          itbi_value?: number | null
+          observations?: string | null
+          payment_date?: string | null
+          prefecture_url?: string | null
+          protocol_date?: string | null
+          protocol_number?: string | null
+          service_id: string
+          status?: Database["public"]["Enums"]["itbi_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_issued?: boolean
+          issuance_date?: string | null
+          itbi_value?: number | null
+          observations?: string | null
+          payment_date?: string | null
+          prefecture_url?: string | null
+          protocol_date?: string | null
+          protocol_number?: string | null
+          service_id?: string
+          status?: Database["public"]["Enums"]["itbi_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_property_itbi_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: true
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_property_registration: {
+        Row: {
+          amount_paid: number | null
+          created_at: string
+          expiration_date: string | null
+          file_url: string | null
+          id: string
+          is_released: boolean
+          issued_date: string | null
+          notes: string | null
+          onr_protocol: string | null
+          registration_type: Database["public"]["Enums"]["property_registration_type"]
+          request_date: string | null
+          service_id: string
+          status: Database["public"]["Enums"]["property_registration_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string
+          expiration_date?: string | null
+          file_url?: string | null
+          id?: string
+          is_released?: boolean
+          issued_date?: string | null
+          notes?: string | null
+          onr_protocol?: string | null
+          registration_type?: Database["public"]["Enums"]["property_registration_type"]
+          request_date?: string | null
+          service_id: string
+          status?: Database["public"]["Enums"]["property_registration_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string
+          expiration_date?: string | null
+          file_url?: string | null
+          id?: string
+          is_released?: boolean
+          issued_date?: string | null
+          notes?: string | null
+          onr_protocol?: string | null
+          registration_type?: Database["public"]["Enums"]["property_registration_type"]
+          request_date?: string | null
+          service_id?: string
+          status?: Database["public"]["Enums"]["property_registration_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_property_registration_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_reminders: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          expiration_date: string
+          id: string
+          is_dismissed: boolean
+          is_sent: boolean
+          reminder_date: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          expiration_date: string
+          id?: string
+          is_dismissed?: boolean
+          is_sent?: boolean
+          reminder_date: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          expiration_date?: string
+          id?: string
+          is_dismissed?: boolean
+          is_sent?: boolean
+          reminder_date?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_reminders_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           assigned_to: string | null
@@ -548,6 +937,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_document_expirations: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -561,6 +951,18 @@ export type Database = {
     Enums: {
       app_role: "administrador" | "gerente" | "colaborador"
       audit_action: "create" | "update" | "delete" | "login" | "logout"
+      civil_certificate_status:
+        | "pendente"
+        | "solicitada"
+        | "emitida"
+        | "vencida"
+        | "cancelada"
+      civil_certificate_type:
+        | "estado_civil"
+        | "simplificada_junta"
+        | "contrato_social"
+        | "alteracao_consolidada"
+        | "ultima_alteracao"
       client_category: "regular" | "recorrente" | "premium" | "unico"
       client_origin:
         | "indicacao"
@@ -582,7 +984,42 @@ export type Database = {
       contact_pref: "whatsapp" | "telefone" | "email" | "presencial"
       finance_status: "pago" | "pendente"
       finance_type: "receita" | "despesa"
+      internet_certificate_status:
+        | "pendente"
+        | "solicitada"
+        | "emitida"
+        | "vencida"
+        | "cancelada"
+      internet_certificate_type:
+        | "tjmg_civel"
+        | "trf6_fisico"
+        | "trf6_eproc"
+        | "tst"
+        | "trt3"
+        | "receita_federal"
+        | "outra"
+      itbi_status: "nao_iniciado" | "protocolado" | "pendente_doc" | "emitido"
       notification_type: "critical" | "warning" | "info" | "success"
+      party_person_type: "PF" | "PJ"
+      party_role:
+        | "comprador"
+        | "vendedor"
+        | "socio_comprador"
+        | "socio_vendedor"
+        | "outorgante"
+        | "outorgado"
+        | "interveniente"
+        | "outros"
+      property_registration_status:
+        | "pendente"
+        | "solicitada"
+        | "liberada"
+        | "vencida"
+      property_registration_type:
+        | "inteiro_teor"
+        | "onus_reais"
+        | "transcricao"
+        | "somente_onus_reais"
       service_stage:
         | "entrada"
         | "documentacao"
@@ -591,6 +1028,7 @@ export type Database = {
         | "revisao"
         | "concluido"
       service_type: "escritura" | "avulso" | "regularizacao"
+      signature_mode: "online" | "presencial" | "hibrida"
       theme_pref: "light" | "dark"
     }
     CompositeTypes: {
@@ -721,6 +1159,20 @@ export const Constants = {
     Enums: {
       app_role: ["administrador", "gerente", "colaborador"],
       audit_action: ["create", "update", "delete", "login", "logout"],
+      civil_certificate_status: [
+        "pendente",
+        "solicitada",
+        "emitida",
+        "vencida",
+        "cancelada",
+      ],
+      civil_certificate_type: [
+        "estado_civil",
+        "simplificada_junta",
+        "contrato_social",
+        "alteracao_consolidada",
+        "ultima_alteracao",
+      ],
       client_category: ["regular", "recorrente", "premium", "unico"],
       client_origin: [
         "indicacao",
@@ -744,7 +1196,47 @@ export const Constants = {
       contact_pref: ["whatsapp", "telefone", "email", "presencial"],
       finance_status: ["pago", "pendente"],
       finance_type: ["receita", "despesa"],
+      internet_certificate_status: [
+        "pendente",
+        "solicitada",
+        "emitida",
+        "vencida",
+        "cancelada",
+      ],
+      internet_certificate_type: [
+        "tjmg_civel",
+        "trf6_fisico",
+        "trf6_eproc",
+        "tst",
+        "trt3",
+        "receita_federal",
+        "outra",
+      ],
+      itbi_status: ["nao_iniciado", "protocolado", "pendente_doc", "emitido"],
       notification_type: ["critical", "warning", "info", "success"],
+      party_person_type: ["PF", "PJ"],
+      party_role: [
+        "comprador",
+        "vendedor",
+        "socio_comprador",
+        "socio_vendedor",
+        "outorgante",
+        "outorgado",
+        "interveniente",
+        "outros",
+      ],
+      property_registration_status: [
+        "pendente",
+        "solicitada",
+        "liberada",
+        "vencida",
+      ],
+      property_registration_type: [
+        "inteiro_teor",
+        "onus_reais",
+        "transcricao",
+        "somente_onus_reais",
+      ],
       service_stage: [
         "entrada",
         "documentacao",
@@ -754,6 +1246,7 @@ export const Constants = {
         "concluido",
       ],
       service_type: ["escritura", "avulso", "regularizacao"],
+      signature_mode: ["online", "presencial", "hibrida"],
       theme_pref: ["light", "dark"],
     },
   },
