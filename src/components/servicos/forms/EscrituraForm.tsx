@@ -14,8 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { maskPhoneBR } from "@/lib/masks";
 
-import { FormSection, FieldLabel } from "./FormSection";
-import { MoneyInput } from "./MoneyInput";
+import { FormSection, FieldLabel } from "../FormSection";
+import { MoneyInput } from "../MoneyInput";
 import { type EscrituraFields, TIPO_ESCRITURA_OPTIONS } from "@/lib/serviceFields";
 
 interface Props {
