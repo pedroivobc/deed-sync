@@ -22,7 +22,7 @@ export function RegularizacaoForm({ value, onChange }: Props) {
 
   return (
     <div className="space-y-5">
-      <FormSection title="Partes Envolvidas">
+      <FormSection title="Partes Envolvidas" id="section-partes_envolvidas">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <FieldLabel>Proprietário</FieldLabel>
@@ -53,7 +53,7 @@ export function RegularizacaoForm({ value, onChange }: Props) {
         </div>
       </FormSection>
 
-      <FormSection title="Imóvel">
+      <FormSection title="Imóvel" id="section-imovel">
         <div className="grid gap-4 md:grid-cols-3">
           <div>
             <FieldLabel>Inscrição de IPTU</FieldLabel>
@@ -78,7 +78,7 @@ export function RegularizacaoForm({ value, onChange }: Props) {
         </div>
       </FormSection>
 
-      <FormSection title="Situação Atual e Pendências">
+      <FormSection title="Situação Atual e Pendências" id="section-situacao_pendencias">
         <div className="grid gap-4">
           <div>
             <FieldLabel required>Descrição da situação atual do imóvel</FieldLabel>

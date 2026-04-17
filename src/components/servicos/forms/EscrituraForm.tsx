@@ -47,7 +47,7 @@ export function EscrituraForm({ value, onChange }: Props) {
   return (
     <div className="space-y-5">
       {/* Partes Envolvidas */}
-      <FormSection title="Partes Envolvidas">
+      <FormSection title="Partes Envolvidas" id="section-partes_envolvidas">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <FieldLabel>Compradora</FieldLabel>
@@ -96,7 +96,7 @@ export function EscrituraForm({ value, onChange }: Props) {
       </FormSection>
 
       {/* Documentação */}
-      <FormSection title="Documentação">
+      <FormSection title="Documentação" id="section-documentacao">
         <div className="grid gap-3 md:grid-cols-2">
           {docItems.map((item) => {
             const checked = !!value.documentacao[item.key];
@@ -120,7 +120,7 @@ export function EscrituraForm({ value, onChange }: Props) {
       </FormSection>
 
       {/* Imóvel */}
-      <FormSection title="Imóvel">
+      <FormSection title="Imóvel" id="section-imovel">
         <div className="grid gap-4 md:grid-cols-3">
           <div>
             <FieldLabel>Inscrição de IPTU</FieldLabel>
@@ -146,7 +146,7 @@ export function EscrituraForm({ value, onChange }: Props) {
       </FormSection>
 
       {/* Processo e Contrato */}
-      <FormSection title="Processo e Contrato">
+      <FormSection title="Processo e Contrato" id="section-processo_contrato">
         <div className="space-y-4">
           <label className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 text-sm">
             <Checkbox checked={!!value.processo_contrato.contrato_compra_venda}
@@ -190,7 +190,7 @@ export function EscrituraForm({ value, onChange }: Props) {
       </FormSection>
 
       {/* Escritura */}
-      <FormSection title="Escritura">
+      <FormSection title="Escritura" id="section-escritura">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <FieldLabel>Cartório de Notas onde será lavrada</FieldLabel>
@@ -216,7 +216,7 @@ export function EscrituraForm({ value, onChange }: Props) {
       </FormSection>
 
       {/* Financeiro */}
-      <FormSection title="Financeiro">
+      <FormSection title="Financeiro" id="section-financeiro">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <FieldLabel required>Valor declarado de compra</FieldLabel>
@@ -264,7 +264,7 @@ export function EscrituraForm({ value, onChange }: Props) {
       </FormSection>
 
       {/* Sistemas e Controle */}
-      <FormSection title="Sistemas e Controle">
+      <FormSection title="Sistemas e Controle" id="section-sistemas_controle">
         <div className="grid gap-4 md:grid-cols-3">
           <div>
             <FieldLabel>Imobiliária</FieldLabel>
