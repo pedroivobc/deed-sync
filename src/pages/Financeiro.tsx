@@ -29,6 +29,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { formatBRL } from "@/lib/money";
 import {
   RECEITA_CATEGORIES, DESPESA_CATEGORIES, PERIOD_LABEL,
@@ -51,6 +52,7 @@ const PAGE_SIZE = 25;
 
 export default function Financeiro() {
   const { isAdmin, isManager, loading: authLoading, roles } = useAuth();
+  const { canDeleteFinanceEntry } = usePermissions();
 
   // ----- Permission gate (Colaborador → bloqueio total)
   const blocked = !authLoading && roles.length > 0 && !isManager;
@@ -526,9 +528,11 @@ export default function Financeiro() {
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(e)}>
                               ✎
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setToDelete(e)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            {canDeleteFinanceEntry(e.created_at) && (
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setToDelete(e)} title="Excluir">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

@@ -197,7 +197,10 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved }: Props)
       last_contact: values.last_contact ? format(values.last_contact, "yyyy-MM-dd") : null,
       next_followup: values.next_followup ? format(values.next_followup, "yyyy-MM-dd") : null,
       notes: values.notes?.trim() || null,
-      internal_notes: values.internal_notes?.trim() || null,
+      // Preserve existing internal notes when the user can't see/edit them.
+      internal_notes: canSeeInternalNotes
+        ? (values.internal_notes?.trim() || null)
+        : (client?.internal_notes ?? null),
     };
 
     let error;
@@ -569,15 +572,17 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved }: Props)
               <Textarea rows={3} {...form.register("notes")} />
             </div>
 
-            <div className="mt-4 space-y-2">
-              <Label>Notas internas</Label>
-              <p className="text-xs text-muted-foreground">Notas confidenciais da equipe (não compartilhar com cliente).</p>
-              <Textarea
-                rows={3}
-                className="bg-accent/5 focus-visible:bg-accent/5"
-                {...form.register("internal_notes")}
-              />
-            </div>
+            {canSeeInternalNotes && (
+              <div className="mt-4 space-y-2">
+                <Label>Notas internas</Label>
+                <p className="text-xs text-muted-foreground">Notas confidenciais da equipe (não compartilhar com cliente).</p>
+                <Textarea
+                  rows={3}
+                  className="bg-accent/5 focus-visible:bg-accent/5"
+                  {...form.register("internal_notes")}
+                />
+              </div>
+            )}
           </Section>
 
           <DialogFooter className="sticky bottom-0 -mx-6 border-t bg-background px-6 py-3">
