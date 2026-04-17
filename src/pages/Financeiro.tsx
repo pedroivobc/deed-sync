@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ChartSkeleton, KpiCardSkeleton, TableRowsSkeleton } from "@/components/ui/skeletons";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -20,12 +20,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { IconAction } from "@/components/ui/icon-action";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { notify, humanizeBackendError } from "@/lib/notify";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -88,7 +86,7 @@ export default function Financeiro() {
       supabase.from("services").select("id, subject, type").limit(2000),
       supabase.from("clients").select("id, name").limit(2000),
     ]);
-    if (error) toast.error(error.message);
+    if (error) notify.error(humanizeBackendError(error), { retry: loadAll });
     setEntries((ent ?? []) as FinanceEntry[]);
     const sMap: Record<string, ServiceLite> = {};
     (svcRes.data ?? []).forEach((s) => { sMap[s.id] = s as ServiceLite; });
@@ -226,21 +224,21 @@ export default function Financeiro() {
   const confirmDelete = async () => {
     if (!toDelete) return;
     const { error } = await supabase.from("finance_entries").delete().eq("id", toDelete.id);
-    if (error) toast.error(error.message);
-    else { toast.success("Lançamento excluído."); loadAll(); }
+    if (error) notify.error(humanizeBackendError(error));
+    else { notify.success("Lançamento removido"); loadAll(); }
     setToDelete(null);
   };
   const togglePaid = async (e: FinanceEntry) => {
     const next: FinanceStatus = e.status === "pago" ? "pendente" : "pago";
     const { error } = await supabase.from("finance_entries").update({ status: next }).eq("id", e.id);
-    if (error) toast.error(error.message);
+    if (error) notify.error(humanizeBackendError(error));
     else loadAll();
   };
   const doExport = () => {
-    if (sorted.length === 0) { toast.info("Nada para exportar no período."); return; }
+    if (sorted.length === 0) { notify.info("Nada para exportar no período."); return; }
     const stamp = format(new Date(), "yyyyMMdd-HHmm");
     exportToCsv(sorted, `financeiro-${stamp}.csv`);
-    toast.success("CSV exportado.");
+    notify.success("CSV exportado");
   };
 
   // ----- Keyboard shortcuts
@@ -377,7 +375,7 @@ export default function Financeiro() {
         {/* KPIs principais */}
         {loading ? (
           <div className="grid gap-3 md:grid-cols-4">
-            {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+            {[0, 1, 2, 3].map((i) => <KpiCardSkeleton key={i} />)}
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-4">
@@ -432,20 +430,20 @@ export default function Financeiro() {
             <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-accent-foreground/80">
               Receita vs Despesa (últimos 6 meses)
             </h2>
-            {loading ? <Skeleton className="h-[300px] w-full" /> : <RevenueExpenseChart data={last6} />}
+            {loading ? <ChartSkeleton height={300} /> : <RevenueExpenseChart data={last6} />}
           </Card>
           <Card className="rounded-2xl p-4">
             <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-accent-foreground/80">
               Receita por tipo de serviço
             </h2>
-            {loading ? <Skeleton className="h-[300px] w-full" /> : <RevenueByServiceChart data={revenueByServiceType} />}
+            {loading ? <ChartSkeleton height={300} /> : <RevenueByServiceChart data={revenueByServiceType} />}
           </Card>
         </div>
 
         {/* DRE */}
         <section className="space-y-2">
           <h2 className="font-display text-xl">Fluxo de caixa por categoria</h2>
-          {loading ? <Skeleton className="h-80 rounded-2xl" /> : <DreTable receitas={dreReceitas} despesas={dreDespesas} />}
+          {loading ? <ChartSkeleton height={320} className="rounded-2xl" /> : <DreTable receitas={dreReceitas} despesas={dreDespesas} />}
         </section>
 
         {/* Tabela */}
@@ -459,7 +457,18 @@ export default function Financeiro() {
           </div>
 
           {loading ? (
-            <Skeleton className="h-80 rounded-2xl" />
+            <Card className="overflow-hidden rounded-2xl">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {Array.from({ length: 9 }).map((_, i) => <TableHead key={i}>—</TableHead>)}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRowsSkeleton rows={5} cols={9} />
+                </TableBody>
+              </Table>
+            </Card>
           ) : sorted.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 rounded-2xl border-dashed p-12 text-center">
               <Wallet className="h-10 w-10 text-muted-foreground" />
@@ -522,16 +531,16 @@ export default function Financeiro() {
                                 <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pago
                               </Button>
                             )}
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDuplicate(e)} title="Duplicar">
+                            <IconAction label="Duplicar lançamento" className="h-7 w-7" onClick={() => handleDuplicate(e)}>
                               <Copy className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(e)}>
+                            </IconAction>
+                            <IconAction label="Editar lançamento" className="h-7 w-7" onClick={() => handleEdit(e)}>
                               ✎
-                            </Button>
+                            </IconAction>
                             {canDeleteFinanceEntry(e.created_at) && (
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setToDelete(e)} title="Excluir">
+                              <IconAction label="Excluir lançamento" className="h-7 w-7 text-destructive" onClick={() => setToDelete(e)}>
                                 <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                              </IconAction>
                             )}
                           </div>
                         </TableCell>
@@ -565,22 +574,20 @@ export default function Financeiro() {
         onSaved={loadAll}
       />
 
-      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir lançamento?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Tem certeza que deseja excluir o lançamento "{toDelete?.description}"?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!toDelete}
+        onOpenChange={(o) => !o && setToDelete(null)}
+        title="Excluir lançamento?"
+        description={
+          <>
+            Esta ação não pode ser desfeita. O lançamento{" "}
+            <strong>"{toDelete?.description}"</strong> será removido permanentemente.
+          </>
+        }
+        confirmText="Sim, excluir"
+        loadingText="Excluindo..."
+        onConfirm={confirmDelete}
+      />
     </AppLayout>
   );
 }
