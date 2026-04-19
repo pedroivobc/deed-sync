@@ -99,13 +99,20 @@ export function IntegrationsPanel() {
 
   const handleTest = async () => {
     setTesting(true);
-    const res = await callDrive<ConnectionInfo>("test_connection");
+    const res = await callDrive<Record<string, unknown>>("test_connection");
     setTesting(false);
     if (!res.ok) {
       setConn({ connected: false, service_account_email: null, root_folder_id: null });
       toast.error(`Conexão falhou: ${res.error ?? "erro desconhecido"}`);
-    } else if (res.result) {
-      setConn(res.result);
+    } else {
+      const r = (res.result ?? {}) as Record<string, unknown>;
+      setConn({
+        connected: true,
+        service_account_email: (r.email as string) ?? (r.service_account_email as string) ?? null,
+        root_folder_id: (r.root_folder_id as string) ?? null,
+        root_folder_url: (r.folder_url as string) ?? null,
+        root_folder_name: (r.folder_name as string) ?? null,
+      });
       toast.success("Conexão com Google Drive bem-sucedida.");
     }
     await loadLogs();
