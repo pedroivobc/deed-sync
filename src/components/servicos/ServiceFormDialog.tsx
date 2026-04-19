@@ -34,6 +34,8 @@ import { RegularizacaoForm } from "./forms/RegularizacaoForm";
 import { ProgressPanel } from "./ProgressPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { CompleteConfirmDialog } from "./CompleteConfirmDialog";
+import { DriveFolderButton } from "@/components/DriveFolderButton";
+import { callDrive } from "@/lib/drive";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
