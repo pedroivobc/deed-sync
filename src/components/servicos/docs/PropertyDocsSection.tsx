@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { ExternalLink, Pencil, FileText, Coins, AlertTriangle } from "lucide-react";
+import { ExternalLink, Pencil, FileText, Coins, AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { FieldLabel } from "../FormSection";
 import {
@@ -14,6 +16,11 @@ import {
 import type { EscrituraFields } from "@/lib/serviceFields";
 import { ItbiDialog } from "./ItbiDialog";
 import { PropertyRegistrationDialog } from "./PropertyRegistrationDialog";
+import { AttachPropertyRegistrationDialog } from "./AttachPropertyRegistrationDialog";
+import { AttachedFileBadge } from "@/components/files/AttachedFileBadge";
+import { FilePreviewDialog } from "@/components/files/FilePreviewDialog";
+import { deleteDriveFile } from "@/lib/driveFiles";
+import { notify } from "@/lib/notify";
 
 interface Props {
   serviceId: string;
