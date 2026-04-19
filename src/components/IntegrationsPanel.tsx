@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { callDrive } from "@/lib/drive";
+import { callDrive, checkDriveSecrets } from "@/lib/drive";
 
 type SecretsStatus = Record<string, boolean>;
 
@@ -28,6 +28,8 @@ interface ConnectionInfo {
   connected: boolean;
   service_account_email: string | null;
   root_folder_id: string | null;
+  root_folder_url?: string | null;
+  root_folder_name?: string | null;
   sample_items?: Array<{ name: string }>;
 }
 
@@ -48,28 +50,41 @@ export function IntegrationsPanel() {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [stats, setStats] = useState({ folders: 0, files: 0 });
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const refreshAll = async () => {
-    const [secRes, statsRes] = await Promise.all([
-      callDrive<SecretsStatus>("secrets_status"),
-      Promise.all([
+    setLoadError(null);
+    try {
+      const [secretsMap, foldersRes, filesRes] = await Promise.all([
+        checkDriveSecrets(),
         supabase.from("drive_folders").select("id", { count: "exact", head: true }).eq("subfolder_type", "root"),
         supabase.from("drive_files").select("id", { count: "exact", head: true }),
-      ]),
-    ]);
-    if (secRes.ok && secRes.result) setSecrets(secRes.result);
-    setStats({ folders: statsRes[0].count ?? 0, files: statsRes[1].count ?? 0 });
-    await loadLogs();
+      ]);
+      setSecrets(secretsMap);
+      setStats({ folders: foldersRes.count ?? 0, files: filesRes.count ?? 0 });
+      await loadLogs();
+    } catch (e) {
+      console.error("[IntegrationsPanel] refreshAll error", e);
+      setLoadError(e instanceof Error ? e.message : "Erro ao carregar integrações");
+    }
   };
 
   const loadLogs = async () => {
     setLoadingLogs(true);
-    const { data } = await supabase
-      .from("drive_sync_logs")
-      .select("id, operation, status, details, error_message, created_at")
-      .order("created_at", { ascending: false })
-      .limit(10);
-    setLogs((data ?? []) as SyncLog[]);
-    setLoadingLogs(false);
+    try {
+      const { data, error } = await supabase
+        .from("drive_sync_logs")
+        .select("id, operation, status, details, error_message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      setLogs((data ?? []) as SyncLog[]);
+    } catch (e) {
+      console.error("[IntegrationsPanel] loadLogs error", e);
+      setLogs([]);
+    } finally {
+      setLoadingLogs(false);
+    }
   };
 
   useEffect(() => {
@@ -84,13 +99,20 @@ export function IntegrationsPanel() {
 
   const handleTest = async () => {
     setTesting(true);
-    const res = await callDrive<ConnectionInfo>("test_connection");
+    const res = await callDrive<Record<string, unknown>>("test_connection");
     setTesting(false);
     if (!res.ok) {
       setConn({ connected: false, service_account_email: null, root_folder_id: null });
       toast.error(`Conexão falhou: ${res.error ?? "erro desconhecido"}`);
-    } else if (res.result) {
-      setConn(res.result);
+    } else {
+      const r = (res.result ?? {}) as Record<string, unknown>;
+      setConn({
+        connected: true,
+        service_account_email: (r.email as string) ?? (r.service_account_email as string) ?? null,
+        root_folder_id: (r.root_folder_id as string) ?? null,
+        root_folder_url: (r.folder_url as string) ?? null,
+        root_folder_name: (r.folder_name as string) ?? null,
+      });
       toast.success("Conexão com Google Drive bem-sucedida.");
     }
     await loadLogs();
@@ -118,6 +140,14 @@ export function IntegrationsPanel() {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <Card className="rounded-2xl border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          <div className="flex items-center justify-between gap-3">
+            <span>Não foi possível carregar todas as informações de integração: {loadError}</span>
+            <Button size="sm" variant="outline" onClick={refreshAll}>Tentar novamente</Button>
+          </div>
+        </Card>
+      )}
       <Card className="rounded-2xl p-6 shadow-soft">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -169,14 +199,14 @@ export function IntegrationsPanel() {
           </div>
           <div className="space-y-1">
             <p className="text-xs uppercase text-muted-foreground">Pasta raiz</p>
-            {conn?.root_folder_id ? (
+            {conn?.root_folder_url || conn?.root_folder_id ? (
               <a
                 className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
-                href={`https://drive.google.com/drive/folders/${conn.root_folder_id}`}
+                href={conn.root_folder_url ?? `https://drive.google.com/drive/folders/${conn.root_folder_id}`}
                 target="_blank"
                 rel="noopener"
               >
-                Abrir no Drive <ExternalLink className="h-3 w-3" />
+                {conn.root_folder_name ?? "Abrir no Drive"} <ExternalLink className="h-3 w-3" />
               </a>
             ) : (
               <p className="text-sm">—</p>

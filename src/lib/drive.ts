@@ -15,9 +15,28 @@ export async function callDrive<T = unknown>(
       body: { action, params },
     });
     if (error) return { ok: false, error: error.message };
-    return data as DriveActionResult<T>;
+    if (data && typeof data === "object" && "ok" in data) {
+      return data as DriveActionResult<T>;
+    }
+    if (data && typeof data === "object" && "success" in data) {
+      const d = data as { success: boolean; error?: string; [k: string]: unknown };
+      return { ok: !!d.success, result: d as unknown as T, error: d.error };
+    }
+    return { ok: true, result: data as T };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export async function checkDriveSecrets(): Promise<Record<string, boolean>> {
+  try {
+    const { data, error } = await supabase.functions.invoke("check-drive-secrets", {
+      body: {},
+    });
+    if (error || !data) return {};
+    return data as Record<string, boolean>;
+  } catch {
+    return {};
   }
 }
 
