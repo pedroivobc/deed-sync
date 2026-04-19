@@ -74,6 +74,7 @@ export default function Configuracoes() {
             <TabsTrigger value="senha">Senha</TabsTrigger>
             <TabsTrigger value="preferencias">Preferências</TabsTrigger>
             {canManageUsers && <TabsTrigger value="usuarios">Gestão de Usuários</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="integracoes">Integrações</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="perfil">
