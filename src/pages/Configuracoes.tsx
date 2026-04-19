@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { UserManagement } from "@/components/UserManagement";
 import { PreferencesPanel } from "@/components/PreferencesPanel";
 import { AuditLogPanel } from "@/components/AuditLogPanel";
+import { IntegrationsPanel } from "@/components/IntegrationsPanel";
 
 export default function Configuracoes() {
   const { profile, refreshProfile, isAdmin } = useAuth();
@@ -73,6 +74,7 @@ export default function Configuracoes() {
             <TabsTrigger value="senha">Senha</TabsTrigger>
             <TabsTrigger value="preferencias">Preferências</TabsTrigger>
             {canManageUsers && <TabsTrigger value="usuarios">Gestão de Usuários</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="integracoes">Integrações</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="perfil">
@@ -141,8 +143,14 @@ export default function Configuracoes() {
                   <TabsContent value="auditoria">
                     <AuditLogPanel />
                   </TabsContent>
-                )}
-              </Tabs>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="integracoes">
+              <IntegrationsPanel />
+            </TabsContent>
+          )}
+        </Tabs>
             </TabsContent>
           )}
         </Tabs>

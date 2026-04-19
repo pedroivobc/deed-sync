@@ -34,6 +34,8 @@ import { RegularizacaoForm } from "./forms/RegularizacaoForm";
 import { ProgressPanel } from "./ProgressPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { CompleteConfirmDialog } from "./CompleteConfirmDialog";
+import { DriveFolderButton } from "@/components/DriveFolderButton";
+import { callDrive } from "@/lib/drive";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
@@ -214,6 +216,21 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     if (serviceId) {
       if (!isEdit) {
         await logChange(serviceId, "created", { type, stage, subject: payload.subject });
+        // Fire-and-forget: create Google Drive folder structure
+        const matricula = type === "escritura"
+          ? ((cf.imovel as Record<string, unknown> | undefined)?.matricula_numero as string | undefined)
+          : undefined;
+        callDrive("create_service_folder", {
+          service_id: serviceId,
+          type,
+          client_name: client.name,
+          subject: payload.subject,
+          matricula,
+        }).then((res) => {
+          if (!res.ok) {
+            console.warn("Drive folder creation failed:", res.error);
+          }
+        });
       } else if (previous) {
         if (previous.stage !== stage) {
           await logChange(serviceId, "stage_changed", { from: previous.stage, to: stage });
@@ -307,9 +324,25 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                 )}
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {isEdit && service && type && (
+                <DriveFolderButton
+                  entityType="service"
+                  entityId={service.id}
+                  serviceType={type}
+                  clientName={client?.name ?? null}
+                  subject={subject}
+                  matricula={
+                    type === "escritura"
+                      ? ((customFields as EscrituraFields)?.imovel?.numero_matricula as string | undefined) ?? null
+                      : null
+                  }
+                />
+              )}
+              <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Body */}

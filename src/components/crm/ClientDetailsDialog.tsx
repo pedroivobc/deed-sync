@@ -23,6 +23,7 @@ import {
   STATUS_LABEL, STATUS_BADGE, CATEGORY_LABEL, CHANNEL_LABEL, getInitials,
   type ContactChannel,
 } from "@/lib/clientUi";
+import { DriveFolderButton } from "@/components/DriveFolderButton";
 import type { Database } from "@/integrations/supabase/types";
 
 type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
@@ -181,6 +182,12 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
             <Button className="w-full gap-2" onClick={() => onEdit(client)}>
               <Pencil className="h-4 w-4" /> Editar cliente
             </Button>
+            <DriveFolderButton
+              entityType="client"
+              entityId={client.id}
+              clientName={client.name}
+              cpfCnpj={client.cpf_cnpj}
+            />
           </div>
 
           {/* RIGHT */}

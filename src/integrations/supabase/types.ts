@@ -195,6 +195,180 @@ export type Database = {
           },
         ]
       }
+      drive_files: {
+        Row: {
+          client_id: string | null
+          download_url: string | null
+          drive_file_id: string
+          drive_folder_id: string
+          file_name: string
+          file_size: number
+          id: string
+          mime_type: string
+          notes: string | null
+          ocr_extracted_data: Json | null
+          ocr_status: Database["public"]["Enums"]["drive_ocr_status"]
+          preview_url: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          service_id: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          download_url?: string | null
+          drive_file_id: string
+          drive_folder_id: string
+          file_name: string
+          file_size?: number
+          id?: string
+          mime_type: string
+          notes?: string | null
+          ocr_extracted_data?: Json | null
+          ocr_status?: Database["public"]["Enums"]["drive_ocr_status"]
+          preview_url?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          service_id?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          download_url?: string | null
+          drive_file_id?: string
+          drive_folder_id?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          notes?: string | null
+          ocr_extracted_data?: Json | null
+          ocr_status?: Database["public"]["Enums"]["drive_ocr_status"]
+          preview_url?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          service_id?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drive_files_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drive_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drive_folders: {
+        Row: {
+          created_at: string
+          drive_folder_id: string
+          drive_folder_url: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["drive_entity_type"]
+          folder_path: string
+          id: string
+          parent_folder_id: string | null
+          subfolder_type: Database["public"]["Enums"]["drive_subfolder_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          drive_folder_id: string
+          drive_folder_url: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["drive_entity_type"]
+          folder_path: string
+          id?: string
+          parent_folder_id?: string | null
+          subfolder_type?: Database["public"]["Enums"]["drive_subfolder_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          drive_folder_id?: string
+          drive_folder_url?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["drive_entity_type"]
+          folder_path?: string
+          id?: string
+          parent_folder_id?: string | null
+          subfolder_type?: Database["public"]["Enums"]["drive_subfolder_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      drive_sync_logs: {
+        Row: {
+          created_at: string
+          details: Json
+          drive_resource_id: string | null
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          operation: Database["public"]["Enums"]["drive_sync_operation"]
+          status: Database["public"]["Enums"]["drive_sync_status"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          drive_resource_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          operation: Database["public"]["Enums"]["drive_sync_operation"]
+          status: Database["public"]["Enums"]["drive_sync_status"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          drive_resource_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          operation?: Database["public"]["Enums"]["drive_sync_operation"]
+          status?: Database["public"]["Enums"]["drive_sync_status"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_sync_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_entries: {
         Row: {
           amount: number
@@ -982,6 +1156,36 @@ export type Database = {
         | "presencial"
         | "outros"
       contact_pref: "whatsapp" | "telefone" | "email" | "presencial"
+      drive_entity_type: "service" | "client"
+      drive_ocr_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "not_applicable"
+      drive_subfolder_type:
+        | "root"
+        | "certidoes_pessoais"
+        | "certidoes_internet"
+        | "docs_imovel"
+        | "contrato"
+        | "escritura_final"
+        | "docs_recebidos"
+        | "docs_gerados"
+        | "entrega_final"
+        | "docs_pessoais"
+        | "historico_servicos"
+        | "comunicacoes"
+      drive_sync_operation:
+        | "folder_created"
+        | "folder_deleted"
+        | "file_uploaded"
+        | "file_deleted"
+        | "ocr_processed"
+        | "sync_manual"
+        | "test_connection"
+        | "error"
+      drive_sync_status: "success" | "failed" | "partial"
       finance_status: "pago" | "pendente"
       finance_type: "receita" | "despesa"
       internet_certificate_status:
@@ -1194,6 +1398,39 @@ export const Constants = {
         "outros",
       ],
       contact_pref: ["whatsapp", "telefone", "email", "presencial"],
+      drive_entity_type: ["service", "client"],
+      drive_ocr_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "not_applicable",
+      ],
+      drive_subfolder_type: [
+        "root",
+        "certidoes_pessoais",
+        "certidoes_internet",
+        "docs_imovel",
+        "contrato",
+        "escritura_final",
+        "docs_recebidos",
+        "docs_gerados",
+        "entrega_final",
+        "docs_pessoais",
+        "historico_servicos",
+        "comunicacoes",
+      ],
+      drive_sync_operation: [
+        "folder_created",
+        "folder_deleted",
+        "file_uploaded",
+        "file_deleted",
+        "ocr_processed",
+        "sync_manual",
+        "test_connection",
+        "error",
+      ],
+      drive_sync_status: ["success", "failed", "partial"],
       finance_status: ["pago", "pendente"],
       finance_type: ["receita", "despesa"],
       internet_certificate_status: [

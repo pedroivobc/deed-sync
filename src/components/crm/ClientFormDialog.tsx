@@ -32,6 +32,7 @@ import {
   ORIGIN_LABEL, STATUS_LABEL, CATEGORY_LABEL, CONTACT_PREF_LABEL, CHANNEL_LABEL,
   type ClientStatus, type ClientCategory, type ClientOrigin, type ContactPref, type ContactChannel,
 } from "@/lib/clientUi";
+import { callDrive } from "@/lib/drive";
 import type { Database } from "@/integrations/supabase/types";
 
 type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
@@ -204,10 +205,28 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved }: Props)
     };
 
     let error;
+    let newClientId: string | null = null;
     if (client) {
       ({ error } = await supabase.from("clients").update(payload).eq("id", client.id));
     } else {
-      ({ error } = await supabase.from("clients").insert({ ...payload, created_by: user?.id ?? null }));
+      const { data, error: insErr } = await supabase
+        .from("clients")
+        .insert({ ...payload, created_by: user?.id ?? null })
+        .select("id")
+        .maybeSingle();
+      error = insErr;
+      newClientId = data?.id ?? null;
+    }
+
+    // Fire-and-forget: create Google Drive folder for new client
+    if (!error && !client && newClientId) {
+      callDrive("create_client_folder", {
+        client_id: newClientId,
+        client_name: payload.name,
+        cpf_cnpj: payload.cpf_cnpj ?? undefined,
+      }).then((res) => {
+        if (!res.ok) console.warn("Drive folder creation failed:", res.error);
+      });
     }
 
     // Optionally log first contact when creating with last_contact set
