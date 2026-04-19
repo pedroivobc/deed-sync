@@ -337,8 +337,6 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                       ? ((customFields as EscrituraFields)?.imovel?.numero_matricula as string | undefined) ?? null
                       : null
                   }
-                      : null
-                  }
                 />
               )}
               <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
