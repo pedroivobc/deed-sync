@@ -54,6 +54,37 @@ export function PartyFormDialog({ open, onOpenChange, serviceId, party, onSaved 
   const [hasDigitalCert, setHasDigitalCert] = useState<boolean | null>(null);
   const [notes, setNotes] = useState("");
 
+  const [showUploader, setShowUploader] = useState(false);
+  const [reviewResult, setReviewResult] = useState<(OcrResult & { documentType: OcrDocumentType; fileName: string }) | null>(null);
+
+  const reviewFields = useMemo(() => {
+    if (personType === "PJ") {
+      return [
+        { key: "razao_social", label: "Razão social" },
+        { key: "cnpj", label: "CNPJ" },
+        { key: "endereco_completo", label: "Endereço (resumo)" },
+      ];
+    }
+    return [
+      { key: "nome_completo", label: "Nome completo" },
+      { key: "cpf", label: "CPF" },
+      { key: "rg", label: "RG" },
+      { key: "numero_cnh", label: "CNH" },
+    ];
+  }, [personType]);
+
+  const applyExtraction = (vals: Record<string, unknown>) => {
+    if (personType === "PJ") {
+      if (vals.razao_social) setName(String(vals.razao_social));
+      if (vals.cnpj) setCpfCnpj(maskCpfCnpj(String(vals.cnpj), "PJ"));
+      if (vals.endereco_completo) setAddress(String(vals.endereco_completo));
+    } else {
+      if (vals.nome_completo) setName(String(vals.nome_completo));
+      if (vals.cpf) setCpfCnpj(maskCpfCnpj(String(vals.cpf), "PF"));
+      if (vals.rg) setRg(String(vals.rg));
+      if (vals.numero_cnh) setCnh(String(vals.numero_cnh));
+    }
+  };
   useEffect(() => {
     if (!open) return;
     if (party) {
