@@ -166,6 +166,39 @@ export function PartyFormDialog({ open, onOpenChange, serviceId, party, onSaved 
         </DialogHeader>
 
         <div className="space-y-5 py-2">
+          {/* OCR */}
+          <section className="rounded-2xl border border-accent/30 bg-accent/5 p-3">
+            {!showUploader ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                  <span>Já tem o {personType === "PF" ? "RG/CNH" : "Contrato Social"}? Extraia automaticamente.</span>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setShowUploader(true)} className="gap-1">
+                  <Sparkles className="h-3.5 w-3.5" /> Extrair dados
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-medium">Upload de documento</div>
+                  <Button size="sm" variant="ghost" onClick={() => setShowUploader(false)}>Fechar</Button>
+                </div>
+                <DocumentUploader
+                  serviceId={serviceId}
+                  partyId={party?.id ?? null}
+                  allowedTypes={
+                    personType === "PF"
+                      ? ["rg", "cnh", "cpf", "comprovante_residencia"]
+                      : ["contrato_social", "certidao_junta", "alteracao_contratual"]
+                  }
+                  defaultType={personType === "PF" ? "rg" : "contrato_social"}
+                  onExtracted={(r) => { setReviewResult(r); setShowUploader(false); }}
+                />
+              </div>
+            )}
+          </section>
+
           {/* A) Papel */}
           <section className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-accent">Papel no processo</h4>
