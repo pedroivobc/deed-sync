@@ -140,6 +140,14 @@ export function IntegrationsPanel() {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <Card className="rounded-2xl border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          <div className="flex items-center justify-between gap-3">
+            <span>Não foi possível carregar todas as informações de integração: {loadError}</span>
+            <Button size="sm" variant="outline" onClick={refreshAll}>Tentar novamente</Button>
+          </div>
+        </Card>
+      )}
       <Card className="rounded-2xl p-6 shadow-soft">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
