@@ -191,14 +191,14 @@ export function IntegrationsPanel() {
           </div>
           <div className="space-y-1">
             <p className="text-xs uppercase text-muted-foreground">Pasta raiz</p>
-            {conn?.root_folder_id ? (
+            {conn?.root_folder_url || conn?.root_folder_id ? (
               <a
                 className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
-                href={`https://drive.google.com/drive/folders/${conn.root_folder_id}`}
+                href={conn.root_folder_url ?? `https://drive.google.com/drive/folders/${conn.root_folder_id}`}
                 target="_blank"
                 rel="noopener"
               >
-                Abrir no Drive <ExternalLink className="h-3 w-3" />
+                {conn.root_folder_name ?? "Abrir no Drive"} <ExternalLink className="h-3 w-3" />
               </a>
             ) : (
               <p className="text-sm">—</p>
