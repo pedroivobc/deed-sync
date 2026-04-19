@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -16,6 +16,9 @@ import {
   PARTY_ROLE_LABEL, MARITAL_STATUS_OPTIONS, BR_STATES, SIGNATURE_MODE_LABEL,
   type ServiceParty, type PartyRole, type PartyPersonType, type SignatureMode,
 } from "@/lib/serviceDocs";
+import { DocumentUploader } from "@/components/ocr/DocumentUploader";
+import { ExtractionReviewDialog } from "@/components/ocr/ExtractionReviewDialog";
+import type { OcrDocumentType, OcrResult } from "@/lib/ocr";
 
 interface Props {
   open: boolean;
