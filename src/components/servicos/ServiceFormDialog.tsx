@@ -324,9 +324,25 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                 )}
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {isEdit && service && type && (
+                <DriveFolderButton
+                  entityType="service"
+                  entityId={service.id}
+                  serviceType={type}
+                  clientName={client?.name ?? null}
+                  subject={subject}
+                  matricula={
+                    type === "escritura"
+                      ? ((customFields as EscrituraFields)?.imovel?.matricula_numero as string | undefined) ?? null
+                      : null
+                  }
+                />
+              )}
+              <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Body */}
