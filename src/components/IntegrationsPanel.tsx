@@ -48,28 +48,41 @@ export function IntegrationsPanel() {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [stats, setStats] = useState({ folders: 0, files: 0 });
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const refreshAll = async () => {
-    const [secRes, statsRes] = await Promise.all([
-      callDrive<SecretsStatus>("secrets_status"),
-      Promise.all([
+    setLoadError(null);
+    try {
+      const [secretsMap, foldersRes, filesRes] = await Promise.all([
+        checkDriveSecrets(),
         supabase.from("drive_folders").select("id", { count: "exact", head: true }).eq("subfolder_type", "root"),
         supabase.from("drive_files").select("id", { count: "exact", head: true }),
-      ]),
-    ]);
-    if (secRes.ok && secRes.result) setSecrets(secRes.result);
-    setStats({ folders: statsRes[0].count ?? 0, files: statsRes[1].count ?? 0 });
-    await loadLogs();
+      ]);
+      setSecrets(secretsMap);
+      setStats({ folders: foldersRes.count ?? 0, files: filesRes.count ?? 0 });
+      await loadLogs();
+    } catch (e) {
+      console.error("[IntegrationsPanel] refreshAll error", e);
+      setLoadError(e instanceof Error ? e.message : "Erro ao carregar integrações");
+    }
   };
 
   const loadLogs = async () => {
     setLoadingLogs(true);
-    const { data } = await supabase
-      .from("drive_sync_logs")
-      .select("id, operation, status, details, error_message, created_at")
-      .order("created_at", { ascending: false })
-      .limit(10);
-    setLogs((data ?? []) as SyncLog[]);
-    setLoadingLogs(false);
+    try {
+      const { data, error } = await supabase
+        .from("drive_sync_logs")
+        .select("id, operation, status, details, error_message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      setLogs((data ?? []) as SyncLog[]);
+    } catch (e) {
+      console.error("[IntegrationsPanel] loadLogs error", e);
+      setLogs([]);
+    } finally {
+      setLoadingLogs(false);
+    }
   };
 
   useEffect(() => {
