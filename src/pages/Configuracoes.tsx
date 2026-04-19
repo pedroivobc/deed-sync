@@ -143,8 +143,14 @@ export default function Configuracoes() {
                   <TabsContent value="auditoria">
                     <AuditLogPanel />
                   </TabsContent>
-                )}
-              </Tabs>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="integracoes">
+              <IntegrationsPanel />
+            </TabsContent>
+          )}
+        </Tabs>
             </TabsContent>
           )}
         </Tabs>
