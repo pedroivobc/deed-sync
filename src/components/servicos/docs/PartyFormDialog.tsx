@@ -348,6 +348,15 @@ export function PartyFormDialog({ open, onOpenChange, serviceId, party, onSaved 
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ExtractionReviewDialog
+        open={!!reviewResult}
+        onOpenChange={(o) => { if (!o) setReviewResult(null); }}
+        result={reviewResult}
+        fileName={reviewResult?.fileName}
+        fields={reviewFields}
+        onApply={applyExtraction}
+      />
     </Dialog>
   );
 }
