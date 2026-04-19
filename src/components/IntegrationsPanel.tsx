@@ -28,6 +28,8 @@ interface ConnectionInfo {
   connected: boolean;
   service_account_email: string | null;
   root_folder_id: string | null;
+  root_folder_url?: string | null;
+  root_folder_name?: string | null;
   sample_items?: Array<{ name: string }>;
 }
 
