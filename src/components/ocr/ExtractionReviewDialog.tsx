@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, AlertTriangle, XCircle, Sparkles } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -34,28 +34,34 @@ interface Props {
 export function ExtractionReviewDialog({
   open, onOpenChange, result, fileName, fields, onApply,
 }: Props) {
-  const data = (result?.extracted ?? {}) as Record<string, unknown>;
-  const confidences = (result?.confidence_scores ?? {}) as Record<string, Confidence>;
+  // Memoize derived references against the stable `result` identity to avoid
+  // creating new `{}` literals on every render (which would invalidate the
+  // effect deps below and trigger infinite re-renders).
+  const data = useMemo(
+    () => (result?.extracted ?? {}) as Record<string, unknown>,
+    [result],
+  );
+  const confidences = useMemo(
+    () => (result?.confidence_scores ?? {}) as Record<string, Confidence>,
+    [result],
+  );
 
-  const initialValues = useMemo(() => {
-    const out: Record<string, unknown> = {};
+  const [values, setValues] = useState<Record<string, unknown>>({});
+  const [corrected, setCorrected] = useState<Record<string, boolean>>({});
+
+  // Reset form values whenever a new extraction result arrives.
+  // Using useEffect (not useMemo) because we are performing a side-effect.
+  useEffect(() => {
+    const next: Record<string, unknown> = {};
     for (const f of fields) {
       const c = confidences[f.key] ?? "none";
       // só auto-preenche para confiança alta/média
-      if (c === "high" || c === "medium") out[f.key] = data[f.key] ?? "";
-      else out[f.key] = "";
+      if (c === "high" || c === "medium") next[f.key] = data[f.key] ?? "";
+      else next[f.key] = "";
     }
-    return out;
-  }, [data, confidences, fields]);
-
-  const [values, setValues] = useState<Record<string, unknown>>(initialValues);
-  const [corrected, setCorrected] = useState<Record<string, boolean>>({});
-
-  // re-inicializa quando muda o resultado
-  useMemo(() => {
-    setValues(initialValues);
+    setValues(next);
     setCorrected({});
-  }, [initialValues]);
+  }, [data, confidences, fields]);
 
   const setField = (k: string, v: string) => {
     setValues((prev) => ({ ...prev, [k]: v }));
