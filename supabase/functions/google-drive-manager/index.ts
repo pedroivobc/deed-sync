@@ -638,6 +638,15 @@ Deno.serve(async (req) => {
       case "get_file_metadata":
         result = await actionGetFileMetadata(ctx, params as never);
         break;
+      case "upload_file":
+        result = await actionUploadFile(ctx, params as never);
+        break;
+      case "delete_file":
+        result = await actionDeleteFile(ctx, params as never);
+        break;
+      case "download_file":
+        result = await actionDownloadFile(ctx, params as never);
+        break;
       default:
         return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
           status: 400,
