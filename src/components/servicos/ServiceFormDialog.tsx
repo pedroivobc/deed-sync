@@ -334,7 +334,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                   subject={subject}
                   matricula={
                     type === "escritura"
-                      ? ((customFields as EscrituraFields)?.imovel?.matricula_numero as string | undefined) ?? null
+                      ? ((customFields as EscrituraFields)?.imovel?.numero_matricula as string | undefined) ?? null
+                      : null
+                  }
                       : null
                   }
                 />
