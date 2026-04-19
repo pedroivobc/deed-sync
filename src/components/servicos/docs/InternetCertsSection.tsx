@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info } from "lucide-react";
+import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,11 @@ import {
   type ServiceParty, type InternetCertificate, type InternetCertificateType,
 } from "@/lib/serviceDocs";
 import { InternetCertDialog } from "./InternetCertDialog";
+import { AttachInternetCertDialog } from "./AttachInternetCertDialog";
+import { AttachedFileBadge } from "@/components/files/AttachedFileBadge";
+import { FilePreviewDialog } from "@/components/files/FilePreviewDialog";
+import { deleteDriveFile } from "@/lib/driveFiles";
+import { notify } from "@/lib/notify";
 
 interface Props {
   serviceId: string;
@@ -24,6 +29,12 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
   const [editing, setEditing] = useState<InternetCertificate | null>(null);
   const [defaultType, setDefaultType] = useState<InternetCertificateType | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [attachCert, setAttachCert] = useState<InternetCertificate | null>(null);
+
+  const [previewFor, setPreviewFor] = useState<InternetCertificate | null>(null);
+  const [removeFileFor, setRemoveFileFor] = useState<InternetCertificate | null>(null);
 
   const vendors = parties.filter((p) => p.role === "vendedor" || p.role === "socio_vendedor");
 
@@ -56,10 +67,64 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
   };
   const onDelete = async () => {
     if (!deleteId) return;
+    const cert = internetCerts.find((c) => c.id === deleteId);
+    // Best-effort: remove file from Drive too
+    if (cert?.drive_file_id) {
+      try { await deleteDriveFile(cert.drive_file_id); } catch { /* ignore */ }
+    }
     const { error } = await supabase.from("service_internet_certificates").delete().eq("id", deleteId);
     if (error) { toast.error(error.message); return; }
     toast.success("Certidão removida.");
     setDeleteId(null);
+    onChanged();
+  };
+
+  // Open the attach dialog. If the cert row doesn't exist yet (default type clicked
+  // for the first time), create a stub row so we have an id to attach to.
+  const openAttach = async (typeOrCert: InternetCertificateType | InternetCertificate) => {
+    if (typeof typeOrCert !== "string") {
+      setAttachCert(typeOrCert);
+      setAttachOpen(true);
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from("service_internet_certificates")
+      .insert({
+        service_id: serviceId,
+        certificate_type: typeOrCert,
+        request_date: today,
+        status: "pendente",
+      })
+      .select()
+      .single();
+    if (error || !data) {
+      notify.error("Não foi possível criar registro da certidão", { description: error?.message });
+      return;
+    }
+    onChanged();
+    setAttachCert(data as InternetCertificate);
+    setAttachOpen(true);
+  };
+
+  const removeFile = async () => {
+    if (!removeFileFor?.drive_file_id) { setRemoveFileFor(null); return; }
+    try { await deleteDriveFile(removeFileFor.drive_file_id); } catch { /* ignore */ }
+    const { error } = await supabase
+      .from("service_internet_certificates")
+      .update({
+        drive_file_id: null,
+        file_name: null,
+        file_size: null,
+        file_uploaded_at: null,
+      })
+      .eq("id", removeFileFor.id);
+    if (error) {
+      notify.error("Erro ao remover arquivo", { description: error.message });
+      return;
+    }
+    notify.success("Arquivo removido da certidão.");
+    setRemoveFileFor(null);
     onChanged();
   };
 
@@ -86,6 +151,9 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
               onEdit={() => cert && openEdit(cert)}
               onRenew={() => cert && onRenew(cert)}
               onDelete={() => cert && setDeleteId(cert.id)}
+              onAttach={() => openAttach(cert ?? cfg.type)}
+              onPreview={() => cert && setPreviewFor(cert)}
+              onRemoveFile={() => cert && setRemoveFileFor(cert)}
             />
           );
         })}
@@ -102,6 +170,9 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
                 onEdit={() => openEdit(c)}
                 onRenew={() => onRenew(c)}
                 onDelete={() => setDeleteId(c.id)}
+                onAttach={() => openAttach(c)}
+                onPreview={() => setPreviewFor(c)}
+                onRemoveFile={() => setRemoveFileFor(c)}
               />
             ))}
           </div>
@@ -127,28 +198,60 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
         onSaved={onChanged}
       />
 
+      {attachCert && (
+        <AttachInternetCertDialog
+          open={attachOpen}
+          onOpenChange={(o) => { setAttachOpen(o); if (!o) setAttachCert(null); }}
+          serviceId={serviceId}
+          cert={attachCert}
+          onSaved={onChanged}
+        />
+      )}
+
+      <FilePreviewDialog
+        open={!!previewFor}
+        onOpenChange={(o) => !o && setPreviewFor(null)}
+        driveFileId={previewFor?.drive_file_id ?? null}
+        fileName={previewFor?.file_name ?? null}
+      />
+
       <ConfirmDialog
         open={!!deleteId}
         onOpenChange={(o) => !o && setDeleteId(null)}
         onConfirm={onDelete}
         title="Remover certidão?"
-        description="Esta ação não pode ser desfeita."
+        description="Esta ação não pode ser desfeita. O arquivo no Drive também será removido."
         confirmText="Remover"
+      />
+
+      <ConfirmDialog
+        open={!!removeFileFor}
+        onOpenChange={(o) => !o && setRemoveFileFor(null)}
+        onConfirm={removeFile}
+        title="Remover arquivo anexado?"
+        description="O arquivo será removido do Google Drive. Os dados da certidão são preservados."
+        confirmText="Remover arquivo"
       />
     </section>
   );
 }
 
-function InternetCertCard({ cfg, cert, onCreate, onEdit, onRenew, onDelete }: {
+function InternetCertCard({
+  cfg, cert, onCreate, onEdit, onRenew, onDelete, onAttach, onPreview, onRemoveFile,
+}: {
   cfg: typeof INTERNET_CERT_DEFAULTS[number];
   cert: InternetCertificate | undefined;
   onCreate: () => void;
   onEdit: () => void;
   onRenew: () => void;
   onDelete: () => void;
+  onAttach: () => void;
+  onPreview: () => void;
+  onRemoveFile: () => void;
 }) {
   const v = cert ? computeValidity(cert.expected_validity_date) : null;
   const status = cert?.status ?? "pendente";
+  const hasFile = !!cert?.drive_file_id;
 
   return (
     <div className="space-y-2 rounded-lg border border-border bg-background p-3">
@@ -168,14 +271,30 @@ function InternetCertCard({ cfg, cert, onCreate, onEdit, onRenew, onDelete }: {
         </p>
       )}
 
+      {hasFile && cert ? (
+        <AttachedFileBadge
+          fileName={cert.file_name ?? "arquivo"}
+          fileSize={cert.file_size}
+          driveFileId={cert.drive_file_id!}
+          onPreview={onPreview}
+          onReplace={onAttach}
+          onRemove={onRemoveFile}
+          compact
+        />
+      ) : (
+        <Button size="sm" variant="outline" className="w-full" onClick={onAttach}>
+          <Upload className="mr-1.5 h-3 w-3" /> Anexar certidão emitida
+        </Button>
+      )}
+
       <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <Button size="sm" variant="outline" asChild>
+        <Button size="sm" variant="ghost" asChild>
           <a href={cfg.url} target="_blank" rel="noreferrer">
-            <ExternalLink className="mr-1 h-3 w-3" /> Acessar site
+            <ExternalLink className="mr-1 h-3 w-3" /> Site
           </a>
         </Button>
         {!cert ? (
-          <Button size="sm" variant="ghost" onClick={onCreate}>Cadastrar</Button>
+          <Button size="sm" variant="ghost" onClick={onCreate}>Cadastrar dados</Button>
         ) : (
           <>
             {(v?.level === "expired" || v?.level === "soon") && (
@@ -196,13 +315,19 @@ function InternetCertCard({ cfg, cert, onCreate, onEdit, onRenew, onDelete }: {
   );
 }
 
-function CustomCertCard({ cert, onEdit, onRenew, onDelete }: {
+function CustomCertCard({
+  cert, onEdit, onRenew, onDelete, onAttach, onPreview, onRemoveFile,
+}: {
   cert: InternetCertificate;
   onEdit: () => void;
   onRenew: () => void;
   onDelete: () => void;
+  onAttach: () => void;
+  onPreview: () => void;
+  onRemoveFile: () => void;
 }) {
   const v = computeValidity(cert.expected_validity_date);
+  const hasFile = !!cert.drive_file_id;
   return (
     <div className="space-y-2 rounded-lg border border-border bg-background p-3">
       <p className="text-sm font-semibold">{cert.custom_name ?? "Certidão customizada"}</p>
@@ -211,9 +336,26 @@ function CustomCertCard({ cert, onEdit, onRenew, onDelete }: {
         <Badge variant="outline" className="text-[9px]">{INTERNET_STATUS_LABEL[cert.status]}</Badge>
         {cert.expected_validity_date && <Badge className={cn("text-[9px]", v.badgeClass)}>{v.label}</Badge>}
       </div>
+
+      {hasFile ? (
+        <AttachedFileBadge
+          fileName={cert.file_name ?? "arquivo"}
+          fileSize={cert.file_size}
+          driveFileId={cert.drive_file_id!}
+          onPreview={onPreview}
+          onReplace={onAttach}
+          onRemove={onRemoveFile}
+          compact
+        />
+      ) : (
+        <Button size="sm" variant="outline" className="w-full" onClick={onAttach}>
+          <Upload className="mr-1.5 h-3 w-3" /> Anexar certidão emitida
+        </Button>
+      )}
+
       <div className="flex items-center gap-1 pt-1">
         {cert.issuer_url && (
-          <Button size="sm" variant="outline" asChild>
+          <Button size="sm" variant="ghost" asChild>
             <a href={cert.issuer_url} target="_blank" rel="noreferrer">
               <ExternalLink className="mr-1 h-3 w-3" /> Site
             </a>
