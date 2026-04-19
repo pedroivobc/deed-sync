@@ -216,6 +216,21 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     if (serviceId) {
       if (!isEdit) {
         await logChange(serviceId, "created", { type, stage, subject: payload.subject });
+        // Fire-and-forget: create Google Drive folder structure
+        const matricula = type === "escritura"
+          ? ((cf.imovel as Record<string, unknown> | undefined)?.matricula_numero as string | undefined)
+          : undefined;
+        callDrive("create_service_folder", {
+          service_id: serviceId,
+          type,
+          client_name: client.name,
+          subject: payload.subject,
+          matricula,
+        }).then((res) => {
+          if (!res.ok) {
+            console.warn("Drive folder creation failed:", res.error);
+          }
+        });
       } else if (previous) {
         if (previous.stage !== stage) {
           await logChange(serviceId, "stage_changed", { from: previous.stage, to: stage });
