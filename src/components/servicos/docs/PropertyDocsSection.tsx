@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { ExternalLink, Pencil, FileText, Coins, AlertTriangle } from "lucide-react";
+import { ExternalLink, Pencil, FileText, Coins, AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { FieldLabel } from "../FormSection";
 import {
@@ -14,6 +16,11 @@ import {
 import type { EscrituraFields } from "@/lib/serviceFields";
 import { ItbiDialog } from "./ItbiDialog";
 import { PropertyRegistrationDialog } from "./PropertyRegistrationDialog";
+import { AttachPropertyRegistrationDialog } from "./AttachPropertyRegistrationDialog";
+import { AttachedFileBadge } from "@/components/files/AttachedFileBadge";
+import { FilePreviewDialog } from "@/components/files/FilePreviewDialog";
+import { deleteDriveFile } from "@/lib/driveFiles";
+import { notify } from "@/lib/notify";
 
 interface Props {
   serviceId: string;
@@ -29,8 +36,45 @@ export function PropertyDocsSection({
 }: Props) {
   const [itbiOpen, setItbiOpen] = useState(false);
   const [regOpen, setRegOpen] = useState(false);
+  const [attachRegOpen, setAttachRegOpen] = useState(false);
+  const [previewReg, setPreviewReg] = useState(false);
+  const [confirmRemoveFile, setConfirmRemoveFile] = useState(false);
 
   const regValidity = computeValidity(registration?.expiration_date);
+  const hasFile = !!registration?.drive_file_id;
+
+  const openAttach = async () => {
+    if (registration) { setAttachRegOpen(true); return; }
+    // Create a stub registration row so we have an id to attach to
+    const { data, error } = await supabase
+      .from("service_property_registration")
+      .insert({ service_id: serviceId, registration_type: "inteiro_teor", status: "pendente" })
+      .select()
+      .single();
+    if (error || !data) {
+      notify.error("Não foi possível criar registro da matrícula", { description: error?.message });
+      return;
+    }
+    onChanged();
+    // Open the dialog after the parent reloads (next tick)
+    setTimeout(() => setAttachRegOpen(true), 50);
+  };
+
+  const removeFile = async () => {
+    if (!registration?.drive_file_id) { setConfirmRemoveFile(false); return; }
+    try { await deleteDriveFile(registration.drive_file_id); } catch { /* ignore */ }
+    const { error } = await supabase
+      .from("service_property_registration")
+      .update({ drive_file_id: null, file_name: null, file_size: null, file_uploaded_at: null })
+      .eq("id", registration.id);
+    if (error) {
+      notify.error("Erro ao remover arquivo", { description: error.message });
+      return;
+    }
+    notify.success("Arquivo removido da matrícula.");
+    setConfirmRemoveFile(false);
+    onChanged();
+  };
 
   return (
     <section id="section-imovel" className="rounded-xl border border-border bg-card/50 p-4">

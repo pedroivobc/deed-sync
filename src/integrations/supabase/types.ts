@@ -786,7 +786,12 @@ export type Database = {
           comarca: string | null
           created_at: string
           custom_name: string | null
+          drive_file_id: string | null
           expected_validity_date: string | null
+          file_name: string | null
+          file_size: number | null
+          file_uploaded_at: string | null
+          file_uploaded_by: string | null
           file_url: string | null
           id: string
           infosimples_request_id: string | null
@@ -806,7 +811,12 @@ export type Database = {
           comarca?: string | null
           created_at?: string
           custom_name?: string | null
+          drive_file_id?: string | null
           expected_validity_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_uploaded_at?: string | null
+          file_uploaded_by?: string | null
           file_url?: string | null
           id?: string
           infosimples_request_id?: string | null
@@ -826,7 +836,12 @@ export type Database = {
           comarca?: string | null
           created_at?: string
           custom_name?: string | null
+          drive_file_id?: string | null
           expected_validity_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_uploaded_at?: string | null
+          file_uploaded_by?: string | null
           file_url?: string | null
           id?: string
           infosimples_request_id?: string | null
@@ -995,7 +1010,12 @@ export type Database = {
         Row: {
           amount_paid: number | null
           created_at: string
+          drive_file_id: string | null
           expiration_date: string | null
+          file_name: string | null
+          file_size: number | null
+          file_uploaded_at: string | null
+          file_uploaded_by: string | null
           file_url: string | null
           id: string
           is_released: boolean
@@ -1011,7 +1031,12 @@ export type Database = {
         Insert: {
           amount_paid?: number | null
           created_at?: string
+          drive_file_id?: string | null
           expiration_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_uploaded_at?: string | null
+          file_uploaded_by?: string | null
           file_url?: string | null
           id?: string
           is_released?: boolean
@@ -1027,7 +1052,12 @@ export type Database = {
         Update: {
           amount_paid?: number | null
           created_at?: string
+          drive_file_id?: string | null
           expiration_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_uploaded_at?: string | null
+          file_uploaded_by?: string | null
           file_url?: string | null
           id?: string
           is_released?: boolean
