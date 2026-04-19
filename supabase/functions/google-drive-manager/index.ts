@@ -409,6 +409,181 @@ async function actionGetFileMetadata(_ctx: Ctx, params: { file_id: string }) {
   return res.json();
 }
 
+// Upload file (base64) to a specific subfolder of a service or client
+async function actionUploadFile(
+  ctx: Ctx,
+  params: {
+    entity_type: "service" | "client";
+    entity_id: string;
+    subfolder_type: string;
+    file_base64: string;
+    file_name: string;
+    mime_type: string;
+    file_size?: number;
+    related_entity_type?: string;
+    related_entity_id?: string;
+  },
+) {
+  // Find target folder for the requested subfolder_type
+  const { data: folder, error: folderErr } = await ctx.supabase
+    .from("drive_folders")
+    .select("drive_folder_id, folder_path")
+    .eq("entity_type", params.entity_type)
+    .eq("entity_id", params.entity_id)
+    .eq("subfolder_type", params.subfolder_type)
+    .maybeSingle();
+
+  if (folderErr) throw new Error(`folder lookup failed: ${folderErr.message}`);
+  if (!folder) {
+    throw new Error(
+      `Subfolder '${params.subfolder_type}' not found for ${params.entity_type} ${params.entity_id}. Create the folder structure first.`,
+    );
+  }
+
+  // Decode base64
+  const bin = Uint8Array.from(atob(params.file_base64), (c) => c.charCodeAt(0));
+
+  // Multipart upload to Drive
+  const boundary = `----boundary${crypto.randomUUID()}`;
+  const metadata = {
+    name: params.file_name,
+    parents: [folder.drive_folder_id as string],
+  };
+
+  const enc = new TextEncoder();
+  const part1 = enc.encode(
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${params.mime_type}\r\n\r\n`,
+  );
+  const part3 = enc.encode(`\r\n--${boundary}--`);
+  const body = new Uint8Array(part1.length + bin.length + part3.length);
+  body.set(part1, 0);
+  body.set(bin, part1.length);
+  body.set(part3, part1.length + bin.length);
+
+  const token = await getAccessToken();
+  const uploadRes = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,size,mimeType,webViewLink,webContentLink,thumbnailLink",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    },
+  );
+
+  if (!uploadRes.ok) {
+    const text = await uploadRes.text();
+    await logSync(ctx, "file_uploaded", "failed", {
+      entity_type: params.entity_type,
+      entity_id: params.entity_id,
+      error_message: `${uploadRes.status} ${text}`,
+    });
+    throw new Error(`Drive upload failed: ${uploadRes.status} ${text}`);
+  }
+  const uploaded = await uploadRes.json();
+
+  // Persist drive_files row
+  const { data: inserted, error: insertErr } = await ctx.supabase
+    .from("drive_files")
+    .insert({
+      drive_file_id: uploaded.id,
+      drive_folder_id: folder.drive_folder_id,
+      file_name: uploaded.name ?? params.file_name,
+      file_size: Number(uploaded.size ?? params.file_size ?? bin.length),
+      mime_type: uploaded.mimeType ?? params.mime_type,
+      preview_url: uploaded.webViewLink ?? null,
+      download_url: uploaded.webContentLink ?? null,
+      thumbnail_url: uploaded.thumbnailLink ?? null,
+      service_id: params.entity_type === "service" ? params.entity_id : null,
+      client_id: params.entity_type === "client" ? params.entity_id : null,
+      related_entity_type: params.related_entity_type ?? null,
+      related_entity_id: params.related_entity_id ?? null,
+      uploaded_by: ctx.userId,
+    })
+    .select()
+    .single();
+
+  if (insertErr) {
+    console.error("drive_files insert error:", insertErr);
+  }
+
+  await logSync(ctx, "file_uploaded", "success", {
+    entity_type: params.entity_type,
+    entity_id: params.entity_id,
+    drive_resource_id: uploaded.id,
+    details: { folder_path: folder.folder_path, file_name: params.file_name, size: bin.length },
+  });
+
+  return {
+    drive_file_id: uploaded.id,
+    drive_folder_id: folder.drive_folder_id,
+    web_view_link: uploaded.webViewLink,
+    download_url: uploaded.webContentLink,
+    thumbnail_url: uploaded.thumbnailLink,
+    file_name: uploaded.name,
+    file_size: Number(uploaded.size ?? bin.length),
+    mime_type: uploaded.mimeType ?? params.mime_type,
+    db_row_id: inserted?.id ?? null,
+  };
+}
+
+// Delete a file from Drive (and optionally its drive_files row)
+async function actionDeleteFile(
+  ctx: Ctx,
+  params: { drive_file_id: string },
+) {
+  const res = await driveFetch(`/files/${params.drive_file_id}?supportsAllDrives=true`, {
+    method: "DELETE",
+  });
+  if (!res.ok && res.status !== 404) {
+    const text = await res.text();
+    await logSync(ctx, "file_deleted", "failed", {
+      drive_resource_id: params.drive_file_id,
+      error_message: `${res.status} ${text}`,
+    });
+    throw new Error(`Drive delete failed: ${res.status} ${text}`);
+  }
+
+  await ctx.supabase.from("drive_files").delete().eq("drive_file_id", params.drive_file_id);
+
+  await logSync(ctx, "file_deleted", "success", {
+    drive_resource_id: params.drive_file_id,
+  });
+  return { deleted: true };
+}
+
+// Download file content as base64 (used for inline preview when public link not viable)
+async function actionDownloadFile(_ctx: Ctx, params: { drive_file_id: string }) {
+  const token = await getAccessToken();
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${params.drive_file_id}?alt=media&supportsAllDrives=true`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) throw new Error(`download failed: ${res.status} ${await res.text()}`);
+  const buf = new Uint8Array(await res.arrayBuffer());
+  // Convert to base64 in chunks to avoid stack overflow
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < buf.length; i += chunk) {
+    binary += String.fromCharCode(...buf.subarray(i, i + chunk));
+  }
+  const base64 = btoa(binary);
+
+  const meta = await driveFetch(
+    `/files/${params.drive_file_id}?fields=name,mimeType,size&supportsAllDrives=true`,
+  );
+  const metaJson = meta.ok ? await meta.json() : {};
+
+  return {
+    base64,
+    file_name: metaJson.name ?? "file",
+    mime_type: metaJson.mimeType ?? "application/octet-stream",
+    file_size: Number(metaJson.size ?? buf.length),
+  };
+}
+
 async function actionSecretsStatus(_ctx: Ctx) {
   return {
     GOOGLE_SERVICE_ACCOUNT_JSON: Boolean(SERVICE_ACCOUNT_JSON),
