@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { callDrive } from "@/lib/drive";
+import { callDrive, checkDriveSecrets } from "@/lib/drive";
 
 type SecretsStatus = Record<string, boolean>;
 
