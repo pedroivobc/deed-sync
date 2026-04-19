@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { UserManagement } from "@/components/UserManagement";
 import { PreferencesPanel } from "@/components/PreferencesPanel";
 import { AuditLogPanel } from "@/components/AuditLogPanel";
+import { IntegrationsPanel } from "@/components/IntegrationsPanel";
 
 export default function Configuracoes() {
   const { profile, refreshProfile, isAdmin } = useAuth();
