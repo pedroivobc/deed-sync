@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -16,6 +16,9 @@ import {
   PARTY_ROLE_LABEL, MARITAL_STATUS_OPTIONS, BR_STATES, SIGNATURE_MODE_LABEL,
   type ServiceParty, type PartyRole, type PartyPersonType, type SignatureMode,
 } from "@/lib/serviceDocs";
+import { DocumentUploader } from "@/components/ocr/DocumentUploader";
+import { ExtractionReviewDialog } from "@/components/ocr/ExtractionReviewDialog";
+import type { OcrDocumentType, OcrResult } from "@/lib/ocr";
 
 interface Props {
   open: boolean;
@@ -51,6 +54,37 @@ export function PartyFormDialog({ open, onOpenChange, serviceId, party, onSaved 
   const [hasDigitalCert, setHasDigitalCert] = useState<boolean | null>(null);
   const [notes, setNotes] = useState("");
 
+  const [showUploader, setShowUploader] = useState(false);
+  const [reviewResult, setReviewResult] = useState<(OcrResult & { documentType: OcrDocumentType; fileName: string }) | null>(null);
+
+  const reviewFields = useMemo(() => {
+    if (personType === "PJ") {
+      return [
+        { key: "razao_social", label: "Razão social" },
+        { key: "cnpj", label: "CNPJ" },
+        { key: "endereco_completo", label: "Endereço (resumo)" },
+      ];
+    }
+    return [
+      { key: "nome_completo", label: "Nome completo" },
+      { key: "cpf", label: "CPF" },
+      { key: "rg", label: "RG" },
+      { key: "numero_cnh", label: "CNH" },
+    ];
+  }, [personType]);
+
+  const applyExtraction = (vals: Record<string, unknown>) => {
+    if (personType === "PJ") {
+      if (vals.razao_social) setName(String(vals.razao_social));
+      if (vals.cnpj) setCpfCnpj(maskCpfCnpj(String(vals.cnpj), "PJ"));
+      if (vals.endereco_completo) setAddress(String(vals.endereco_completo));
+    } else {
+      if (vals.nome_completo) setName(String(vals.nome_completo));
+      if (vals.cpf) setCpfCnpj(maskCpfCnpj(String(vals.cpf), "PF"));
+      if (vals.rg) setRg(String(vals.rg));
+      if (vals.numero_cnh) setCnh(String(vals.numero_cnh));
+    }
+  };
   useEffect(() => {
     if (!open) return;
     if (party) {
@@ -132,6 +166,39 @@ export function PartyFormDialog({ open, onOpenChange, serviceId, party, onSaved 
         </DialogHeader>
 
         <div className="space-y-5 py-2">
+          {/* OCR */}
+          <section className="rounded-2xl border border-accent/30 bg-accent/5 p-3">
+            {!showUploader ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                  <span>Já tem o {personType === "PF" ? "RG/CNH" : "Contrato Social"}? Extraia automaticamente.</span>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setShowUploader(true)} className="gap-1">
+                  <Sparkles className="h-3.5 w-3.5" /> Extrair dados
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-medium">Upload de documento</div>
+                  <Button size="sm" variant="ghost" onClick={() => setShowUploader(false)}>Fechar</Button>
+                </div>
+                <DocumentUploader
+                  serviceId={serviceId}
+                  partyId={party?.id ?? null}
+                  allowedTypes={
+                    personType === "PF"
+                      ? ["rg", "cnh", "cpf", "comprovante_residencia"]
+                      : ["contrato_social", "certidao_junta", "alteracao_contratual"]
+                  }
+                  defaultType={personType === "PF" ? "rg" : "contrato_social"}
+                  onExtracted={(r) => { setReviewResult(r); setShowUploader(false); }}
+                />
+              </div>
+            )}
+          </section>
+
           {/* A) Papel */}
           <section className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-accent">Papel no processo</h4>
@@ -281,6 +348,15 @@ export function PartyFormDialog({ open, onOpenChange, serviceId, party, onSaved 
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ExtractionReviewDialog
+        open={!!reviewResult}
+        onOpenChange={(o) => { if (!o) setReviewResult(null); }}
+        result={reviewResult}
+        fileName={reviewResult?.fileName}
+        fields={reviewFields}
+        onApply={applyExtraction}
+      />
     </Dialog>
   );
 }

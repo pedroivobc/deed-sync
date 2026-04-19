@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { callDrive, checkDriveSecrets } from "@/lib/drive";
+import { GeminiOcrCard } from "@/components/ocr/GeminiOcrCard";
 
 type SecretsStatus = Record<string, boolean>;
 
@@ -140,6 +141,7 @@ export function IntegrationsPanel() {
 
   return (
     <div className="space-y-6">
+      <GeminiOcrCard />
       {loadError && (
         <Card className="rounded-2xl border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
           <div className="flex items-center justify-between gap-3">

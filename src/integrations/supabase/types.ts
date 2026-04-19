@@ -495,6 +495,144 @@ export type Database = {
           },
         ]
       }
+      ocr_extraction_logs: {
+        Row: {
+          client_id: string | null
+          confidence_scores: Json
+          created_at: string
+          created_by: string | null
+          document_type: Database["public"]["Enums"]["ocr_document_type"]
+          drive_file_id: string | null
+          error_message: string | null
+          extracted_data: Json
+          file_name: string
+          file_size: number
+          gemini_model_used: string | null
+          id: string
+          mime_type: string
+          party_id: string | null
+          processing_time_ms: number | null
+          prompt_tokens_used: number | null
+          response_tokens_used: number | null
+          service_id: string | null
+          status: Database["public"]["Enums"]["ocr_extraction_status"]
+          user_accepted: boolean
+          user_corrected_fields: Json | null
+        }
+        Insert: {
+          client_id?: string | null
+          confidence_scores?: Json
+          created_at?: string
+          created_by?: string | null
+          document_type: Database["public"]["Enums"]["ocr_document_type"]
+          drive_file_id?: string | null
+          error_message?: string | null
+          extracted_data?: Json
+          file_name: string
+          file_size?: number
+          gemini_model_used?: string | null
+          id?: string
+          mime_type: string
+          party_id?: string | null
+          processing_time_ms?: number | null
+          prompt_tokens_used?: number | null
+          response_tokens_used?: number | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["ocr_extraction_status"]
+          user_accepted?: boolean
+          user_corrected_fields?: Json | null
+        }
+        Update: {
+          client_id?: string | null
+          confidence_scores?: Json
+          created_at?: string
+          created_by?: string | null
+          document_type?: Database["public"]["Enums"]["ocr_document_type"]
+          drive_file_id?: string | null
+          error_message?: string | null
+          extracted_data?: Json
+          file_name?: string
+          file_size?: number
+          gemini_model_used?: string | null
+          id?: string
+          mime_type?: string
+          party_id?: string | null
+          processing_time_ms?: number | null
+          prompt_tokens_used?: number | null
+          response_tokens_used?: number | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["ocr_extraction_status"]
+          user_accepted?: boolean
+          user_corrected_fields?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ocr_extraction_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ocr_extraction_logs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ocr_extraction_logs_drive_file_id_fkey"
+            columns: ["drive_file_id"]
+            isOneToOne: false
+            referencedRelation: "drive_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ocr_extraction_logs_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "service_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ocr_extraction_logs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ocr_usage_stats: {
+        Row: {
+          by_document_type: Json
+          estimated_cost_brl: number
+          id: string
+          month: string
+          total_extractions: number
+          total_tokens_used: number
+          updated_at: string
+        }
+        Insert: {
+          by_document_type?: Json
+          estimated_cost_brl?: number
+          id?: string
+          month: string
+          total_extractions?: number
+          total_tokens_used?: number
+          updated_at?: string
+        }
+        Update: {
+          by_document_type?: Json
+          estimated_cost_brl?: number
+          id?: string
+          month?: string
+          total_extractions?: number
+          total_tokens_used?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1204,6 +1342,30 @@ export type Database = {
         | "outra"
       itbi_status: "nao_iniciado" | "protocolado" | "pendente_doc" | "emitido"
       notification_type: "critical" | "warning" | "info" | "success"
+      ocr_document_type:
+        | "rg"
+        | "cpf"
+        | "cnh"
+        | "comprovante_residencia"
+        | "contrato_social"
+        | "certidao_junta"
+        | "alteracao_contratual"
+        | "certidao_tjmg"
+        | "certidao_trf6_fisico"
+        | "certidao_trf6_eproc"
+        | "certidao_tst"
+        | "certidao_trt3"
+        | "certidao_receita_federal"
+        | "certidao_estado_civil"
+        | "matricula_imovel"
+        | "guia_itbi"
+        | "outro"
+      ocr_extraction_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "partial"
+        | "failed"
       party_person_type: "PF" | "PJ"
       party_role:
         | "comprador"
@@ -1451,6 +1613,32 @@ export const Constants = {
       ],
       itbi_status: ["nao_iniciado", "protocolado", "pendente_doc", "emitido"],
       notification_type: ["critical", "warning", "info", "success"],
+      ocr_document_type: [
+        "rg",
+        "cpf",
+        "cnh",
+        "comprovante_residencia",
+        "contrato_social",
+        "certidao_junta",
+        "alteracao_contratual",
+        "certidao_tjmg",
+        "certidao_trf6_fisico",
+        "certidao_trf6_eproc",
+        "certidao_tst",
+        "certidao_trt3",
+        "certidao_receita_federal",
+        "certidao_estado_civil",
+        "matricula_imovel",
+        "guia_itbi",
+        "outro",
+      ],
+      ocr_extraction_status: [
+        "pending",
+        "processing",
+        "completed",
+        "partial",
+        "failed",
+      ],
       party_person_type: ["PF", "PJ"],
       party_role: [
         "comprador",
