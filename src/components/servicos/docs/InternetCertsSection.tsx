@@ -35,6 +35,7 @@ interface Props {
 }
 
 export function InternetCertsSection({ serviceId, parties, internetCerts, onChanged }: Props) {
+  const { isAdminOrManager } = usePermissions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<InternetCertificate | null>(null);
   const [defaultType, setDefaultType] = useState<InternetCertificateType | null>(null);
@@ -45,6 +46,8 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
 
   const [previewFor, setPreviewFor] = useState<InternetCertificate | null>(null);
   const [removeFileFor, setRemoveFileFor] = useState<InternetCertificate | null>(null);
+
+  const [issuingType, setIssuingType] = useState<InternetCertificateType | null>(null);
 
   const vendors = parties.filter((p) => p.role === "vendedor" || p.role === "socio_vendedor");
 
