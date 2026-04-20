@@ -97,10 +97,10 @@ export function NewEnvelopeDialog({ open, onOpenChange, serviceId, parties, imov
     filled.nacionalidade_outorgante = p.nationality ?? "brasileiro(a)";
     filled.rg_outorgante = p.rg ?? p.cnh ?? "";
     if (imovel) {
-      filled.endereco_imovel = imovel.endereco ?? imovel.endereco_completo ?? "";
-      filled.inscricao_iptu = imovel.iptu ?? imovel.inscricao_municipal ?? "";
-      filled.numero_matricula = imovel.matricula ?? "";
-      filled.municipio_imovel = imovel.municipio ?? "Juiz de Fora/MG";
+      filled.endereco_imovel = imovel.endereco ?? "";
+      filled.inscricao_iptu = imovel.inscricao_iptu ?? "";
+      filled.numero_matricula = imovel.matricula ?? imovel.numero_matricula ?? "";
+      filled.municipio_imovel = "Juiz de Fora/MG";
     }
     setVariables(filled);
     setSignerEmail(p.email ?? "");
