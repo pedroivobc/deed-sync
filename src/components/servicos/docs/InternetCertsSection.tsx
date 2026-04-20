@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload } from "lucide-react";
+import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload, Zap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,16 @@ import { AttachedFileBadge } from "@/components/files/AttachedFileBadge";
 import { FilePreviewDialog } from "@/components/files/FilePreviewDialog";
 import { deleteDriveFile } from "@/lib/driveFiles";
 import { notify } from "@/lib/notify";
+import { requestSingleCertificate, type InfosimplesConsultationType } from "@/lib/infosimples";
+import { usePermissions } from "@/hooks/usePermissions";
+
+const CERT_TYPE_TO_CONSULTATION: Partial<Record<InternetCertificateType, InfosimplesConsultationType>> = {
+  trf6_fisico: "trf6_certidao",
+  trf6_eproc: "trf6_certidao",
+  tst: "tst_cndt",
+  trt3: "trt3_ceat",
+  receita_federal: "receita_federal_pgfn",
+};
 
 interface Props {
   serviceId: string;
