@@ -448,6 +448,152 @@ export type Database = {
           },
         ]
       }
+      infosimples_requests: {
+        Row: {
+          certificate_id: string | null
+          certificate_result:
+            | Database["public"]["Enums"]["infosimples_certificate_result"]
+            | null
+          completed_at: string | null
+          consultation_type: Database["public"]["Enums"]["infosimples_consultation_type"]
+          cost_estimated_brl: number
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          issued_date: string | null
+          party_id: string | null
+          pdf_drive_file_id: string | null
+          pdf_drive_file_url: string | null
+          processing_time_ms: number | null
+          protocol_number: string | null
+          request_params: Json
+          request_url: string | null
+          response_body: Json | null
+          response_status: number | null
+          retry_count: number
+          service_id: string | null
+          status: Database["public"]["Enums"]["infosimples_request_status"]
+          validity_date: string | null
+        }
+        Insert: {
+          certificate_id?: string | null
+          certificate_result?:
+            | Database["public"]["Enums"]["infosimples_certificate_result"]
+            | null
+          completed_at?: string | null
+          consultation_type: Database["public"]["Enums"]["infosimples_consultation_type"]
+          cost_estimated_brl?: number
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          issued_date?: string | null
+          party_id?: string | null
+          pdf_drive_file_id?: string | null
+          pdf_drive_file_url?: string | null
+          processing_time_ms?: number | null
+          protocol_number?: string | null
+          request_params?: Json
+          request_url?: string | null
+          response_body?: Json | null
+          response_status?: number | null
+          retry_count?: number
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["infosimples_request_status"]
+          validity_date?: string | null
+        }
+        Update: {
+          certificate_id?: string | null
+          certificate_result?:
+            | Database["public"]["Enums"]["infosimples_certificate_result"]
+            | null
+          completed_at?: string | null
+          consultation_type?: Database["public"]["Enums"]["infosimples_consultation_type"]
+          cost_estimated_brl?: number
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          issued_date?: string | null
+          party_id?: string | null
+          pdf_drive_file_id?: string | null
+          pdf_drive_file_url?: string | null
+          processing_time_ms?: number | null
+          protocol_number?: string | null
+          request_params?: Json
+          request_url?: string | null
+          response_body?: Json | null
+          response_status?: number | null
+          retry_count?: number
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["infosimples_request_status"]
+          validity_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "infosimples_requests_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "service_internet_certificates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infosimples_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infosimples_requests_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "service_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "infosimples_requests_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      infosimples_usage_stats: {
+        Row: {
+          by_consultation_type: Json
+          estimated_cost_brl: number
+          failed_requests: number
+          id: string
+          month: string
+          successful_requests: number
+          total_requests: number
+          updated_at: string
+        }
+        Insert: {
+          by_consultation_type?: Json
+          estimated_cost_brl?: number
+          failed_requests?: number
+          id?: string
+          month: string
+          successful_requests?: number
+          total_requests?: number
+          updated_at?: string
+        }
+        Update: {
+          by_consultation_type?: Json
+          estimated_cost_brl?: number
+          failed_requests?: number
+          id?: string
+          month?: string
+          successful_requests?: number
+          total_requests?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -782,7 +928,11 @@ export type Database = {
       }
       service_internet_certificates: {
         Row: {
+          auto_emitted: boolean
           certificate_type: Database["public"]["Enums"]["internet_certificate_type"]
+          classification:
+            | Database["public"]["Enums"]["infosimples_certificate_result"]
+            | null
           comarca: string | null
           created_at: string
           custom_name: string | null
@@ -793,6 +943,7 @@ export type Database = {
           file_uploaded_at: string | null
           file_uploaded_by: string | null
           file_url: string | null
+          gemini_validation_result: Json | null
           id: string
           infosimples_request_id: string | null
           issued_date: string | null
@@ -805,9 +956,16 @@ export type Database = {
           state: string | null
           status: Database["public"]["Enums"]["internet_certificate_status"]
           updated_at: string
+          validation_status:
+            | Database["public"]["Enums"]["infosimples_validation_status"]
+            | null
         }
         Insert: {
+          auto_emitted?: boolean
           certificate_type: Database["public"]["Enums"]["internet_certificate_type"]
+          classification?:
+            | Database["public"]["Enums"]["infosimples_certificate_result"]
+            | null
           comarca?: string | null
           created_at?: string
           custom_name?: string | null
@@ -818,6 +976,7 @@ export type Database = {
           file_uploaded_at?: string | null
           file_uploaded_by?: string | null
           file_url?: string | null
+          gemini_validation_result?: Json | null
           id?: string
           infosimples_request_id?: string | null
           issued_date?: string | null
@@ -830,9 +989,16 @@ export type Database = {
           state?: string | null
           status?: Database["public"]["Enums"]["internet_certificate_status"]
           updated_at?: string
+          validation_status?:
+            | Database["public"]["Enums"]["infosimples_validation_status"]
+            | null
         }
         Update: {
+          auto_emitted?: boolean
           certificate_type?: Database["public"]["Enums"]["internet_certificate_type"]
+          classification?:
+            | Database["public"]["Enums"]["infosimples_certificate_result"]
+            | null
           comarca?: string | null
           created_at?: string
           custom_name?: string | null
@@ -843,6 +1009,7 @@ export type Database = {
           file_uploaded_at?: string | null
           file_uploaded_by?: string | null
           file_url?: string | null
+          gemini_validation_result?: Json | null
           id?: string
           infosimples_request_id?: string | null
           issued_date?: string | null
@@ -855,6 +1022,9 @@ export type Database = {
           state?: string | null
           status?: Database["public"]["Enums"]["internet_certificate_status"]
           updated_at?: string
+          validation_status?:
+            | Database["public"]["Enums"]["infosimples_validation_status"]
+            | null
         }
         Relationships: [
           {
@@ -1356,6 +1526,29 @@ export type Database = {
       drive_sync_status: "success" | "failed" | "partial"
       finance_status: "pago" | "pendente"
       finance_type: "receita" | "despesa"
+      infosimples_certificate_result:
+        | "negativa"
+        | "positiva"
+        | "positiva_com_efeito_negativa"
+        | "inconclusiva"
+      infosimples_consultation_type:
+        | "trf6_certidao"
+        | "tst_cndt"
+        | "trt3_ceat"
+        | "receita_federal_pgfn"
+        | "receita_federal_situacao"
+        | "outro"
+      infosimples_request_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "retrying"
+      infosimples_validation_status:
+        | "pending"
+        | "validated"
+        | "mismatch"
+        | "error"
       internet_certificate_status:
         | "pendente"
         | "solicitada"
@@ -1625,6 +1818,33 @@ export const Constants = {
       drive_sync_status: ["success", "failed", "partial"],
       finance_status: ["pago", "pendente"],
       finance_type: ["receita", "despesa"],
+      infosimples_certificate_result: [
+        "negativa",
+        "positiva",
+        "positiva_com_efeito_negativa",
+        "inconclusiva",
+      ],
+      infosimples_consultation_type: [
+        "trf6_certidao",
+        "tst_cndt",
+        "trt3_ceat",
+        "receita_federal_pgfn",
+        "receita_federal_situacao",
+        "outro",
+      ],
+      infosimples_request_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "retrying",
+      ],
+      infosimples_validation_status: [
+        "pending",
+        "validated",
+        "mismatch",
+        "error",
+      ],
       internet_certificate_status: [
         "pendente",
         "solicitada",
