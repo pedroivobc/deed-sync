@@ -485,6 +485,8 @@ function CustomCertCard({
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge variant="outline" className="text-[9px]">{INTERNET_STATUS_LABEL[cert.status]}</Badge>
         {cert.expected_validity_date && <Badge className={cn("text-[9px]", v.badgeClass)}>{v.label}</Badge>}
+        {cert.classification && <ClassificationBadge value={cert.classification} />}
+        {cert.validation_status && <ValidationBadge value={cert.validation_status} />}
       </div>
 
       {hasFile ? (
