@@ -58,6 +58,260 @@ export type Database = {
           },
         ]
       }
+      clicksign_envelopes: {
+        Row: {
+          cancelled_at: string | null
+          clicksign_document_id: string | null
+          clicksign_envelope_id: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          custom_variables: Json
+          deadline_at: string | null
+          document_name: string
+          document_path_drive: string | null
+          envelope_type: Database["public"]["Enums"]["clicksign_envelope_type"]
+          id: string
+          last_error: string | null
+          party_id: string | null
+          sent_at: string | null
+          service_id: string | null
+          signed_at: string | null
+          signed_document_drive_id: string | null
+          status: Database["public"]["Enums"]["clicksign_envelope_status"]
+          template_used: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          clicksign_document_id?: string | null
+          clicksign_envelope_id: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          custom_variables?: Json
+          deadline_at?: string | null
+          document_name: string
+          document_path_drive?: string | null
+          envelope_type?: Database["public"]["Enums"]["clicksign_envelope_type"]
+          id?: string
+          last_error?: string | null
+          party_id?: string | null
+          sent_at?: string | null
+          service_id?: string | null
+          signed_at?: string | null
+          signed_document_drive_id?: string | null
+          status?: Database["public"]["Enums"]["clicksign_envelope_status"]
+          template_used?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          clicksign_document_id?: string | null
+          clicksign_envelope_id?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          custom_variables?: Json
+          deadline_at?: string | null
+          document_name?: string
+          document_path_drive?: string | null
+          envelope_type?: Database["public"]["Enums"]["clicksign_envelope_type"]
+          id?: string
+          last_error?: string | null
+          party_id?: string | null
+          sent_at?: string | null
+          service_id?: string | null
+          signed_at?: string | null
+          signed_document_drive_id?: string | null
+          status?: Database["public"]["Enums"]["clicksign_envelope_status"]
+          template_used?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clicksign_envelopes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clicksign_envelopes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clicksign_envelopes_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "service_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clicksign_envelopes_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clicksign_signers: {
+        Row: {
+          authentication_methods: string[]
+          clicksign_signer_id: string
+          created_at: string
+          envelope_id: string
+          id: string
+          sign_url: string | null
+          signed_at: string | null
+          signed_ip: string | null
+          signer_cpf_cnpj: string | null
+          signer_email: string
+          signer_name: string
+          signer_order: number
+          signer_phone: string | null
+          signer_role: Database["public"]["Enums"]["clicksign_signer_role"]
+          status: Database["public"]["Enums"]["clicksign_signer_status"]
+        }
+        Insert: {
+          authentication_methods?: string[]
+          clicksign_signer_id: string
+          created_at?: string
+          envelope_id: string
+          id?: string
+          sign_url?: string | null
+          signed_at?: string | null
+          signed_ip?: string | null
+          signer_cpf_cnpj?: string | null
+          signer_email: string
+          signer_name: string
+          signer_order?: number
+          signer_phone?: string | null
+          signer_role?: Database["public"]["Enums"]["clicksign_signer_role"]
+          status?: Database["public"]["Enums"]["clicksign_signer_status"]
+        }
+        Update: {
+          authentication_methods?: string[]
+          clicksign_signer_id?: string
+          created_at?: string
+          envelope_id?: string
+          id?: string
+          sign_url?: string | null
+          signed_at?: string | null
+          signed_ip?: string | null
+          signer_cpf_cnpj?: string | null
+          signer_email?: string
+          signer_name?: string
+          signer_order?: number
+          signer_phone?: string | null
+          signer_role?: Database["public"]["Enums"]["clicksign_signer_role"]
+          status?: Database["public"]["Enums"]["clicksign_signer_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clicksign_signers_envelope_id_fkey"
+            columns: ["envelope_id"]
+            isOneToOne: false
+            referencedRelation: "clicksign_envelopes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clicksign_templates: {
+        Row: {
+          content_html: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          type: Database["public"]["Enums"]["clicksign_envelope_type"]
+          updated_at: string
+          variables_schema: Json
+        }
+        Insert: {
+          content_html: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          type: Database["public"]["Enums"]["clicksign_envelope_type"]
+          updated_at?: string
+          variables_schema?: Json
+        }
+        Update: {
+          content_html?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: Database["public"]["Enums"]["clicksign_envelope_type"]
+          updated_at?: string
+          variables_schema?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clicksign_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clicksign_webhooks_log: {
+        Row: {
+          clicksign_envelope_id: string | null
+          envelope_id: string | null
+          event_type: string
+          id: string
+          payload: Json
+          processed: boolean
+          processing_error: string | null
+          received_at: string
+          signature_valid: boolean
+        }
+        Insert: {
+          clicksign_envelope_id?: string | null
+          envelope_id?: string | null
+          event_type: string
+          id?: string
+          payload?: Json
+          processed?: boolean
+          processing_error?: string | null
+          received_at?: string
+          signature_valid?: boolean
+        }
+        Update: {
+          clicksign_envelope_id?: string | null
+          envelope_id?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed?: boolean
+          processing_error?: string | null
+          received_at?: string
+          signature_valid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clicksign_webhooks_log_envelope_id_fkey"
+            columns: ["envelope_id"]
+            isOneToOne: false
+            referencedRelation: "clicksign_envelopes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_contacts: {
         Row: {
           channel: Database["public"]["Enums"]["contact_channel"]
@@ -1475,6 +1729,25 @@ export type Database = {
         | "contrato_social"
         | "alteracao_consolidada"
         | "ultima_alteracao"
+      clicksign_envelope_status:
+        | "draft"
+        | "running"
+        | "signed"
+        | "cancelled"
+        | "refused"
+        | "expired"
+        | "error"
+      clicksign_envelope_type:
+        | "procuracao_itbi"
+        | "contrato_assessoria"
+        | "declaracao"
+        | "outro"
+      clicksign_signer_role:
+        | "signatario"
+        | "testemunha"
+        | "anuente"
+        | "acusador"
+      clicksign_signer_status: "pending" | "signed" | "refused"
       client_category: "regular" | "recorrente" | "premium" | "unico"
       client_origin:
         | "indicacao"
@@ -1762,6 +2035,28 @@ export const Constants = {
         "alteracao_consolidada",
         "ultima_alteracao",
       ],
+      clicksign_envelope_status: [
+        "draft",
+        "running",
+        "signed",
+        "cancelled",
+        "refused",
+        "expired",
+        "error",
+      ],
+      clicksign_envelope_type: [
+        "procuracao_itbi",
+        "contrato_assessoria",
+        "declaracao",
+        "outro",
+      ],
+      clicksign_signer_role: [
+        "signatario",
+        "testemunha",
+        "anuente",
+        "acusador",
+      ],
+      clicksign_signer_status: ["pending", "signed", "refused"],
       client_category: ["regular", "recorrente", "premium", "unico"],
       client_origin: [
         "indicacao",
