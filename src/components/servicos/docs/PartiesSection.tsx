@@ -161,13 +161,20 @@ function PartyCard({ party, onEdit, onDelete, onBatchEmit }: {
           </a>
         )}
       </div>
-      <div className="flex items-center justify-end gap-1 pt-1">
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+      <div className="flex items-center justify-between gap-1 pt-1">
+        {onBatchEmit ? (
+          <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={onBatchEmit}>
+            <Zap className="h-3 w-3" /> Emitir 5 certidões
+          </Button>
+        ) : <span />}
+        <div className="flex items-center gap-1">
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
     </div>
   );
