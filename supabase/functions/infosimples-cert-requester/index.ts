@@ -566,12 +566,21 @@ Deno.serve(async (req) => {
         });
         const j = await r.json().catch(() => ({}));
         const apiCode = j?.code;
-        const ok = apiCode === 200;
+        // 200 = sucesso; 602 = "serviço inválido" mas só é retornado quando o
+        // token foi autenticado (a Infosimples não expõe endpoint público de
+        // saldo). 601 = token inválido. Qualquer code que NÃO seja 601 e venha
+        // com client_name no header confirma que o token é válido.
+        const tokenAuthenticated = !!j?.header?.token_name && apiCode !== 601;
+        const ok = apiCode === 200 || tokenAuthenticated;
         return jsonResponse({
           ok,
           status: r.status,
           api_code: apiCode,
-          account: j?.data?.[0] ?? j,
+          account: {
+            client_name: j?.header?.client_name ?? null,
+            token_name: j?.header?.token_name ?? null,
+            data: j?.data?.[0] ?? null,
+          },
           error: ok ? undefined : (j?.code_message || `code ${apiCode ?? r.status}`),
         });
       } catch (e) {
