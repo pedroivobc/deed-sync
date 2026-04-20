@@ -202,11 +202,11 @@ export function ClickSignSection({ serviceId, parties, imovel, onChanged }: Prop
                         {envSigners.map((s) => (
                           <div key={s.id} className="flex flex-wrap items-center gap-2 text-xs">
                             {s.status === "signed" ? (
-                              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                              <CheckCircle2 className="h-3 w-3 text-success" />
                             ) : s.status === "refused" ? (
                               <XCircle className="h-3 w-3 text-destructive" />
                             ) : (
-                              <Clock className="h-3 w-3 text-amber-600" />
+                              <Clock className="h-3 w-3 text-warning" />
                             )}
                             <span className="font-medium">{s.signer_name}</span>
                             <span className="text-muted-foreground">({s.signer_email})</span>
