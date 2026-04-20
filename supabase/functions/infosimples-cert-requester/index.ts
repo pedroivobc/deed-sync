@@ -28,11 +28,11 @@ type ConsultationType =
   | "receita_federal_situacao";
 
 const ENDPOINTS: Record<ConsultationType, string> = {
-  trf6_certidao: "consultas/tribunal-trf6-certidao",
-  tst_cndt: "consultas/tribunal-tst-cndt",
-  trt3_ceat: "consultas/tribunal-trt3-ceat",
-  receita_federal_pgfn: "consultas/receita-federal-pgfn",
-  receita_federal_situacao: "consultas/receita-federal-situacao",
+  trf6_certidao: "consultas/tribunal-trf6-certidao.json",
+  tst_cndt: "consultas/tribunal-tst-cndt.json",
+  trt3_ceat: "consultas/tribunal-trt3-ceat.json",
+  receita_federal_pgfn: "consultas/receita-federal-pgfn.json",
+  receita_federal_situacao: "consultas/receita-federal-situacao.json",
 };
 
 const PRICES_BRL: Record<ConsultationType, number> = {
@@ -75,7 +75,13 @@ async function callInfosimples(
   }
   const endpoint = ENDPOINTS[consultationType];
   const url = `${INFOSIMPLES_API_BASE}/${endpoint}`;
-  const body = { token: INFOSIMPLES_API_TOKEN, timeout: 600, ...params };
+  // API Infosimples exige application/x-www-form-urlencoded
+  const formBody = new URLSearchParams();
+  formBody.append("token", INFOSIMPLES_API_TOKEN);
+  formBody.append("timeout", "600");
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null) formBody.append(k, String(v));
+  }
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 8 * 60 * 1000); // 8min hard cap
@@ -83,8 +89,8 @@ async function callInfosimples(
   try {
     const r = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formBody.toString(),
       signal: ctrl.signal,
     });
     const json = await r.json().catch(() => ({}));
