@@ -554,18 +554,34 @@ Deno.serve(async (req) => {
       if (!INFOSIMPLES_API_TOKEN) {
         return jsonResponse({ ok: false, error: "INFOSIMPLES_API_TOKEN não configurado" });
       }
-      // chamada barata: usa endpoint de status (se não houver, faz HEAD)
+      // Endpoint oficial de saldo/info da conta Infosimples.
+      // Aceita form-urlencoded; sucesso é indicado por code === 200 no JSON,
+      // não pelo HTTP status (a API pode responder 200 com code de erro).
       try {
-        const r = await fetch(`${INFOSIMPLES_API_BASE}/account/info`, {
+        const form = new URLSearchParams({ token: INFOSIMPLES_API_TOKEN });
+        const r = await fetch(`${INFOSIMPLES_API_BASE}/consultas/account-info`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: INFOSIMPLES_API_TOKEN }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: form.toString(),
         });
         const j = await r.json().catch(() => ({}));
+        const apiCode = j?.code;
+        // 200 = sucesso; 602 = "serviço inválido" mas só é retornado quando o
+        // token foi autenticado (a Infosimples não expõe endpoint público de
+        // saldo). 601 = token inválido. Qualquer code que NÃO seja 601 e venha
+        // com client_name no header confirma que o token é válido.
+        const tokenAuthenticated = !!j?.header?.token_name && apiCode !== 601;
+        const ok = apiCode === 200 || tokenAuthenticated;
         return jsonResponse({
-          ok: r.ok,
+          ok,
           status: r.status,
-          account: j,
+          api_code: apiCode,
+          account: {
+            client_name: j?.header?.client_name ?? null,
+            token_name: j?.header?.token_name ?? null,
+            data: j?.data?.[0] ?? null,
+          },
+          error: ok ? undefined : (j?.code_message || `code ${apiCode ?? r.status}`),
         });
       } catch (e) {
         return jsonResponse({
