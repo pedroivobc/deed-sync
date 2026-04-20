@@ -270,12 +270,12 @@ function TemplateEditor({
       type,
       description: description.trim() || null,
       content_html: contentHtml,
-      variables_schema: parsedVars,
+      variables_schema: parsedVars as unknown as Record<string, unknown>,
       is_active: isActive,
     };
     const { error } = isNew
-      ? await supabase.from("clicksign_templates").insert(payload)
-      : await supabase.from("clicksign_templates").update(payload).eq("id", template.id);
+      ? await supabase.from("clicksign_templates").insert(payload as never)
+      : await supabase.from("clicksign_templates").update(payload as never).eq("id", template.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(isNew ? "Template criado." : "Template atualizado.");
