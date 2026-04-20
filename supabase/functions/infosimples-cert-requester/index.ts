@@ -559,7 +559,7 @@ Deno.serve(async (req) => {
       // não pelo HTTP status (a API pode responder 200 com code de erro).
       try {
         const form = new URLSearchParams({ token: INFOSIMPLES_API_TOKEN });
-        const r = await fetch(`${INFOSIMPLES_API_BASE}/account/info`, {
+        const r = await fetch(`${INFOSIMPLES_API_BASE}/consultas/account-info`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: form.toString(),
