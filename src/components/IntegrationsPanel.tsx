@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { callDrive, checkDriveSecrets } from "@/lib/drive";
 import { GeminiOcrCard } from "@/components/ocr/GeminiOcrCard";
 import { InfosimplesIntegrationCard } from "@/components/InfosimplesIntegrationCard";
+import { ClickSignIntegrationCard } from "@/components/ClickSignIntegrationCard";
 
 type SecretsStatus = Record<string, boolean>;
 
@@ -143,6 +144,7 @@ export function IntegrationsPanel() {
   return (
     <div className="space-y-6">
       <InfosimplesIntegrationCard />
+      <ClickSignIntegrationCard />
       <GeminiOcrCard />
       {loadError && (
         <Card className="rounded-2xl border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
