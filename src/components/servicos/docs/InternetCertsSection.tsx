@@ -35,7 +35,8 @@ interface Props {
 }
 
 export function InternetCertsSection({ serviceId, parties, internetCerts, onChanged }: Props) {
-  const { isAdminOrManager } = usePermissions();
+  const { roles } = usePermissions();
+  const isAdminOrManager = roles.includes("administrador") || roles.includes("gerente");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<InternetCertificate | null>(null);
   const [defaultType, setDefaultType] = useState<InternetCertificateType | null>(null);
