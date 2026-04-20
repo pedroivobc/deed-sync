@@ -15,7 +15,7 @@ import {
   cancelEnvelope, downloadSignedDocument, resendNotification,
   STATUS_LABEL, STATUS_COLOR, type EnvelopeStatus,
 } from "@/lib/clicksign";
-import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
 import { NewEnvelopeDialog } from "./NewEnvelopeDialog";
 import type { ServiceParty } from "@/lib/serviceDocs";
 import type { EscrituraFields } from "@/lib/serviceFields";
@@ -53,7 +53,8 @@ interface SignerRow {
 }
 
 export function ClickSignSection({ serviceId, parties, imovel, onChanged }: Props) {
-  const { isAdminOrManager } = usePermissions();
+  const { roles } = useAuth();
+  const isAdminOrManager = roles.includes("administrador") || roles.includes("gerente");
   const [envelopes, setEnvelopes] = useState<EnvelopeRow[]>([]);
   const [signers, setSigners] = useState<SignerRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -302,8 +303,9 @@ export function ClickSignSection({ serviceId, parties, imovel, onChanged }: Prop
         onOpenChange={(o) => !o && setConfirmCancel(null)}
         title="Cancelar envelope?"
         description={`Esta ação cancelará "${confirmCancel?.document_name}" no ClickSign. Os signatários receberão notificação. Esta ação não pode ser desfeita.`}
-        confirmLabel="Cancelar envelope"
-        variant="destructive"
+        confirmText="Cancelar envelope"
+        cancelText="Voltar"
+        destructive
         onConfirm={() => confirmCancel && handleCancel(confirmCancel)}
       />
     </Card>
