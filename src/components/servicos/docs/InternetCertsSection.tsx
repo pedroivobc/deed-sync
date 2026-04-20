@@ -142,6 +142,67 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
     onChanged();
   };
 
+  // Emite uma certidão individualmente via Infosimples (apenas tipos automáticos).
+  const onIssueAuto = async (cfgType: InternetCertificateType, cert: InternetCertificate | undefined) => {
+    const consultation = CERT_TYPE_TO_CONSULTATION[cfgType];
+    if (!consultation) return;
+    if (!isAdminOrManager) {
+      notify.error("Apenas administradores e gerentes podem emitir certidões automáticas.");
+      return;
+    }
+    if (vendors.length === 0) {
+      notify.error("Cadastre ao menos um vendedor antes de emitir certidões.");
+      return;
+    }
+    const party = vendors.find((v) => v.cpf_cnpj && v.cpf_cnpj.trim().length > 0);
+    if (!party?.cpf_cnpj) {
+      notify.error("Vendedor sem CPF/CNPJ cadastrado.");
+      return;
+    }
+
+    setIssuingType(cfgType);
+    try {
+      let certificateId = cert?.id ?? null;
+      if (!certificateId) {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: created, error: insErr } = await supabase
+          .from("service_internet_certificates")
+          .insert({
+            service_id: serviceId,
+            party_id: party.id,
+            certificate_type: cfgType,
+            request_date: today,
+            status: "solicitada",
+            auto_emitted: true,
+          })
+          .select()
+          .single();
+        if (insErr || !created) {
+          notify.error("Não foi possível preparar a certidão", { description: insErr?.message });
+          return;
+        }
+        certificateId = created.id;
+        onChanged();
+      }
+
+      const res = await requestSingleCertificate({
+        consultation_type: consultation,
+        cpf_cnpj: party.cpf_cnpj,
+        service_id: serviceId,
+        party_id: party.id,
+        person_type: party.person_type === "PJ" ? "PJ" : "PF",
+      });
+      if (!res.ok || !res.result.success) {
+        notify.error("Falha ao emitir certidão", { description: res.error ?? res.result.error });
+        return;
+      }
+      notify.success(`Certidão emitida (${res.result.classification ?? "ok"}).`);
+      onChanged();
+    } finally {
+      setIssuingType(null);
+    }
+  };
+
   return (
     <section id="section-certidoes_internet" className="rounded-xl border border-border bg-card/50 p-4">
       <div className="mb-3">
