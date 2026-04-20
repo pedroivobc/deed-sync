@@ -217,11 +217,14 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {INTERNET_CERT_DEFAULTS.map((cfg) => {
           const cert = internetCerts.find((c) => c.certificate_type === cfg.type);
+          const canAuto = !!CERT_TYPE_TO_CONSULTATION[cfg.type] && isAdminOrManager;
           return (
             <InternetCertCard
               key={cfg.type}
               cfg={cfg}
               cert={cert}
+              canAutoIssue={canAuto}
+              isIssuing={issuingType === cfg.type}
               onCreate={() => openNew(cfg.type)}
               onEdit={() => cert && openEdit(cert)}
               onRenew={() => cert && onRenew(cert)}
@@ -229,6 +232,7 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
               onAttach={() => openAttach(cert ?? cfg.type)}
               onPreview={() => cert && setPreviewFor(cert)}
               onRemoveFile={() => cert && setRemoveFileFor(cert)}
+              onIssueAuto={() => onIssueAuto(cfg.type, cert)}
             />
           );
         })}
