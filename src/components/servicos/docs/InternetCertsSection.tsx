@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload, Zap, Loader2 } from "lucide-react";
+import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload, Zap, Loader2, ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
