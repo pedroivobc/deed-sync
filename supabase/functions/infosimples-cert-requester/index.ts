@@ -554,18 +554,25 @@ Deno.serve(async (req) => {
       if (!INFOSIMPLES_API_TOKEN) {
         return jsonResponse({ ok: false, error: "INFOSIMPLES_API_TOKEN não configurado" });
       }
-      // chamada barata: usa endpoint de status (se não houver, faz HEAD)
+      // Endpoint oficial de saldo/info da conta Infosimples.
+      // Aceita form-urlencoded; sucesso é indicado por code === 200 no JSON,
+      // não pelo HTTP status (a API pode responder 200 com code de erro).
       try {
+        const form = new URLSearchParams({ token: INFOSIMPLES_API_TOKEN });
         const r = await fetch(`${INFOSIMPLES_API_BASE}/account/info`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: INFOSIMPLES_API_TOKEN }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: form.toString(),
         });
         const j = await r.json().catch(() => ({}));
+        const apiCode = j?.code;
+        const ok = apiCode === 200;
         return jsonResponse({
-          ok: r.ok,
+          ok,
           status: r.status,
-          account: j,
+          api_code: apiCode,
+          account: j?.data?.[0] ?? j,
+          error: ok ? undefined : (j?.code_message || `code ${apiCode ?? r.status}`),
         });
       } catch (e) {
         return jsonResponse({
