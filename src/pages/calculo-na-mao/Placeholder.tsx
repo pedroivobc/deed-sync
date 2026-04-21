@@ -11,7 +11,7 @@ interface PlaceholderProps {
 
 export function CalcPlaceholder({ icon, title, description }: PlaceholderProps) {
   return (
-    <AppLayout>
+    <AppLayout title={title}>
       <div className="space-y-6">
         <CalculationHeader icon={icon} title={title} description={description} />
         <Alert>
