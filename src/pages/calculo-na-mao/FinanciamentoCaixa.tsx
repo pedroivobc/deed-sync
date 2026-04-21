@@ -1,5 +1,5 @@
-import { Home } from "lucide-react";
-import { CalcPlaceholder } from "./Placeholder";
+import { AppLayout } from "@/components/AppLayout";
+import { FinanciamentoPage } from "@/components/calculo-na-mao/financiamentos/FinanciamentoPage";
 export default function FinanciamentoCaixaRoute() {
-  return <CalcPlaceholder icon={Home} title="Financiamento Caixa" description="Custos cartoriais para financiamento Caixa." />;
+  return <AppLayout title="Financiamento Caixa"><FinanciamentoPage variant="caixa" /></AppLayout>;
 }
