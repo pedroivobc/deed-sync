@@ -235,6 +235,60 @@ export const GENERIC_PROMPT = `Analise o documento e extraia o máximo de campos
 Retorne JSON: { "campos": { "<chave>": "<valor>" }, "confidence_scores": { "<chave>": "high|medium|low|none" }, "observacoes": string|null }
 ${COMMON_RULES}`;
 
+export const IPTU_PJF_PROMPT = `Você é especialista em carnê de IPTU da Prefeitura de Juiz de Fora (PJF) - MG.
+Extraia EXCLUSIVAMENTE os campos abaixo do PDF do IPTU e retorne JSON válido:
+
+{
+  "inscricao_imobiliaria": string|null,
+  "endereco_completo": string|null,
+  "proprietario_nome": string|null,
+  "proprietario_cpf_cnpj": string|null,
+  "exercicio": number|null,
+  "terreno": {
+    "area_isotima": string|null,
+    "valor_venal": number|null,
+    "valor_m2": number|null,
+    "area_m2": number|null
+  },
+  "edificacao": {
+    "tipo": "APTO|CASA|SALA|LOJA|TELHEIRO|GALPAO"|null,
+    "padrao": "OTIMO|BOM|REGULAR|BAIXO|POPULAR"|null,
+    "valor_venal": number|null,
+    "valor_m2": number|null,
+    "area_construida_m2": number|null
+  },
+  "valor_venal_total": number|null,
+  "confidence_scores": {
+    "inscricao_imobiliaria": "high|medium|low|none",
+    "endereco_completo": "high|medium|low|none",
+    "proprietario_nome": "high|medium|low|none",
+    "proprietario_cpf_cnpj": "high|medium|low|none",
+    "exercicio": "high|medium|low|none",
+    "terreno_area_isotima": "high|medium|low|none",
+    "terreno_valor_venal": "high|medium|low|none",
+    "terreno_valor_m2": "high|medium|low|none",
+    "edificacao_tipo": "high|medium|low|none",
+    "edificacao_padrao": "high|medium|low|none",
+    "edificacao_valor_venal": "high|medium|low|none",
+    "edificacao_valor_m2": "high|medium|low|none",
+    "valor_venal_total": "high|medium|low|none"
+  },
+  "observacoes": string|null
+}
+
+REGRAS ESPECÍFICAS DO IPTU PJF:
+- "area_isotima" tem formato "RE227", "CS001", "AC012" — duas letras + dígitos. Se vier sem zeros à esquerda, retorne como está; o sistema normaliza.
+- Valores monetários em número decimal puro (ex: 125000.50), SEM "R$" e SEM separador de milhar.
+- "tipo" e "padrao" da edificação devem usar EXATAMENTE um dos valores do enum acima (APTO/CASA/SALA/LOJA/TELHEIRO/GALPAO e OTIMO/BOM/REGULAR/BAIXO/POPULAR). Mapeie sinônimos comuns:
+  - "Apartamento" → "APTO"
+  - "Casa de alvenaria" → "CASA"
+  - "Galpão", "Barracão" → "GALPAO"
+  - "Ótimo", "Excelente" → "OTIMO"
+  - "Médio", "Regular" → "REGULAR"
+- "exercicio" é o ANO do IPTU (ex: 2024).
+- Se o IPTU listar múltiplas unidades, extraia da PRIMEIRA unidade principal.
+${COMMON_RULES}`;
+
 export function getPromptByType(type: string): string {
   switch (type) {
     case "rg": return RG_PROMPT;
@@ -245,6 +299,7 @@ export function getPromptByType(type: string): string {
     case "alteracao_contratual":
       return CONTRATO_SOCIAL_PROMPT;
     case "certidao_junta": return CERTIDAO_JUNTA_PROMPT;
+    case "iptu_pjf": return IPTU_PJF_PROMPT;
     default: return GENERIC_PROMPT;
   }
 }

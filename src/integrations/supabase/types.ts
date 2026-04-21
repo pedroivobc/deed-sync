@@ -2002,6 +2002,7 @@ export type Database = {
         | "matricula_imovel"
         | "guia_itbi"
         | "outro"
+        | "iptu_pjf"
       ocr_extraction_status:
         | "pending"
         | "processing"
@@ -2331,6 +2332,7 @@ export const Constants = {
         "matricula_imovel",
         "guia_itbi",
         "outro",
+        "iptu_pjf",
       ],
       ocr_extraction_status: [
         "pending",
