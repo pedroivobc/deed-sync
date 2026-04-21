@@ -46,7 +46,7 @@ export function CorrecaoContratualPage() {
         subtipo: `Correção INCC ${anoContrato} → ${INCC_ANO_BASE}`,
         valor_base: result.valorCompra,
         valor_total: result.valorCorrigido,
-        dados: { input: { valorCompra, anoContrato }, result },
+        dados: { input: { valorCompra, anoContrato }, result } as unknown as Record<string, unknown>,
       });
       toast.success("Cálculo salvo com sucesso");
     } catch (e) {
