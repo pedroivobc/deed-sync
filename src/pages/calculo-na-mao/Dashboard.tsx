@@ -23,7 +23,7 @@ export default function CalculoDashboardPage() {
   const ultimos = calculos.slice(0, 5);
 
   return (
-    <AppLayout>
+    <AppLayout title="Cálculo na Mão">
       <div className="space-y-6">
         <CalculationHeader
           icon={LayoutDashboard}

@@ -3,7 +3,7 @@ import { CorrecaoContratualPage } from "@/components/calculo-na-mao/correcao-con
 
 export default function CorrecaoContratualRoute() {
   return (
-    <AppLayout>
+    <AppLayout title="Correção Contratual">
       <CorrecaoContratualPage />
     </AppLayout>
   );
