@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Briefcase, Wallet, Settings, LogOut, Lock } from "lucide-react";
+import { LayoutDashboard, Users, Briefcase, Wallet, Settings, LogOut, Lock, Calculator } from "lucide-react";
 import { NavLink as RouterNavLink } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
@@ -24,6 +24,7 @@ const items: NavItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "CRM", url: "/crm", icon: Users },
   { title: "Serviços", url: "/servicos", icon: Briefcase },
+  { title: "Cálculo na Mão", url: "/calculo-na-mao", icon: Calculator },
   { title: "Financeiro", url: "/financeiro", icon: Wallet, permission: "access_financial", lockedWhenDenied: true },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
