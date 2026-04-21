@@ -449,6 +449,81 @@ export type Database = {
           },
         ]
       }
+      cora_api_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          endpoint: string
+          environment: string
+          error_message: string | null
+          id: string
+          idempotency_key: string | null
+          method: string
+          request_payload: Json | null
+          response_body: Json | null
+          response_status: number | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          endpoint: string
+          environment: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string | null
+          method: string
+          request_payload?: Json | null
+          response_body?: Json | null
+          response_status?: number | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string
+          environment?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string | null
+          method?: string
+          request_payload?: Json | null
+          response_body?: Json | null
+          response_status?: number | null
+        }
+        Relationships: []
+      }
+      cora_auth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          environment: string
+          expires_at: string
+          id: string
+          scope: string | null
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          environment: string
+          expires_at: string
+          id?: string
+          scope?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          environment?: string
+          expires_at?: string
+          id?: string
+          scope?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       drive_files: {
         Row: {
           client_id: string | null
