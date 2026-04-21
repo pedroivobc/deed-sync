@@ -45,6 +45,39 @@ const calcSubItems = [
   { title: "Analytics", url: "/calculo-na-mao/analytics", icon: BarChart3 },
 ];
 
+function CalculoSubmenu({ open: initialOpen }: { open: boolean }) {
+  return (
+    <Collapsible defaultOpen={initialOpen} className="group/calc">
+      <CollapsibleTrigger
+        className={cn(
+          "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+          initialOpen
+            ? "bg-primary text-primary-foreground hover:bg-primary"
+            : "text-sidebar-foreground hover:bg-sidebar-accent",
+        )}
+      >
+        <Calculator className="h-4 w-4" />
+        <span className="flex-1 text-left">Cálculo na Mão</span>
+        <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/calc:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-1 space-y-0.5 pl-3">
+        {calcSubItems.map((sub) => (
+          <NavLink
+            key={sub.url}
+            to={sub.url}
+            end
+            className="flex items-center gap-2 rounded-lg border-l border-sidebar-border px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium border-l-primary"
+          >
+            <sub.icon className="h-3.5 w-3.5" />
+            {sub.title}
+          </NavLink>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export function AppSidebar() {
   const { profile, roles, signOut } = useAuth();
   const { can } = usePermissions();
