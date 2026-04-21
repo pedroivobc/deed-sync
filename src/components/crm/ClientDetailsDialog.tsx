@@ -30,6 +30,17 @@ type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
 type FinanceRow = Database["public"]["Tables"]["finance_entries"]["Row"];
 type ContactRow = Database["public"]["Tables"]["client_contacts"]["Row"];
+type CalcRow = Database["public"]["Tables"]["calculos"]["Row"];
+
+const CALC_TIPO_LABEL: Record<CalcRow["tipo"], string> = {
+  valor_venal: "Valor Venal",
+  escritura: "Escritura",
+  doacao: "Doação",
+  correcao_incc: "Correção INCC",
+  financiamento_caixa: "Financ. Caixa",
+  financiamento_privado: "Financ. Privado",
+  regularizacao: "Regularização",
+};
 
 const STAGE_LABEL: Record<string, string> = {
   entrada: "Entrada", documentacao: "Documentação", analise: "Em Análise",
@@ -60,6 +71,7 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [finance, setFinance] = useState<FinanceRow[]>([]);
   const [contacts, setContacts] = useState<ContactRow[]>([]);
+  const [calculos, setCalculos] = useState<CalcRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   // register-contact mini form
@@ -76,10 +88,12 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
       supabase.from("services").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
       supabase.from("finance_entries").select("*").eq("client_id", client.id).order("date", { ascending: false }),
       supabase.from("client_contacts").select("*").eq("client_id", client.id).order("contact_date", { ascending: false }),
-    ]).then(([s, f, c]) => {
+      supabase.from("calculos").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
+    ]).then(([s, f, c, k]) => {
       setServices((s.data ?? []) as ServiceRow[]);
       setFinance((f.data ?? []) as FinanceRow[]);
       setContacts((c.data ?? []) as ContactRow[]);
+      setCalculos((k.data ?? []) as CalcRow[]);
       setLoading(false);
     });
   }, [open, client]);
@@ -196,6 +210,7 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
               <TabsList>
                 <TabsTrigger value="servicos">Serviços ({services.length})</TabsTrigger>
                 <TabsTrigger value="financeiro">Financeiro ({finance.length})</TabsTrigger>
+                <TabsTrigger value="calculos">Cálculos ({calculos.length})</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline ({contacts.length})</TabsTrigger>
               </TabsList>
 
@@ -247,6 +262,8 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-4 space-y-3">
+                {/* placeholder anchor */}
+                {null}
                 {loading ? <p className="text-sm text-muted-foreground">Carregando...</p>
                   : contacts.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Nenhum contato registrado ainda.</p>
