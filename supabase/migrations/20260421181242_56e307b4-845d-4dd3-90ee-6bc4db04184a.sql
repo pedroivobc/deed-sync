@@ -1,0 +1,1 @@
+ALTER TYPE public.ocr_document_type ADD VALUE IF NOT EXISTS 'iptu_pjf';
