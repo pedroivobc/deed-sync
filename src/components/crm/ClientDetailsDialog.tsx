@@ -30,6 +30,17 @@ type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
 type FinanceRow = Database["public"]["Tables"]["finance_entries"]["Row"];
 type ContactRow = Database["public"]["Tables"]["client_contacts"]["Row"];
+type CalcRow = Database["public"]["Tables"]["calculos"]["Row"];
+
+const CALC_TIPO_LABEL: Record<CalcRow["tipo"], string> = {
+  valor_venal: "Valor Venal",
+  escritura: "Escritura",
+  doacao: "Doação",
+  correcao_incc: "Correção INCC",
+  financiamento_caixa: "Financ. Caixa",
+  financiamento_privado: "Financ. Privado",
+  regularizacao: "Regularização",
+};
 
 const STAGE_LABEL: Record<string, string> = {
   entrada: "Entrada", documentacao: "Documentação", analise: "Em Análise",
@@ -60,6 +71,7 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [finance, setFinance] = useState<FinanceRow[]>([]);
   const [contacts, setContacts] = useState<ContactRow[]>([]);
+  const [calculos, setCalculos] = useState<CalcRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   // register-contact mini form
@@ -76,10 +88,12 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
       supabase.from("services").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
       supabase.from("finance_entries").select("*").eq("client_id", client.id).order("date", { ascending: false }),
       supabase.from("client_contacts").select("*").eq("client_id", client.id).order("contact_date", { ascending: false }),
-    ]).then(([s, f, c]) => {
+      supabase.from("calculos").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
+    ]).then(([s, f, c, k]) => {
       setServices((s.data ?? []) as ServiceRow[]);
       setFinance((f.data ?? []) as FinanceRow[]);
       setContacts((c.data ?? []) as ContactRow[]);
+      setCalculos((k.data ?? []) as CalcRow[]);
       setLoading(false);
     });
   }, [open, client]);
@@ -196,6 +210,7 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
               <TabsList>
                 <TabsTrigger value="servicos">Serviços ({services.length})</TabsTrigger>
                 <TabsTrigger value="financeiro">Financeiro ({finance.length})</TabsTrigger>
+                <TabsTrigger value="calculos">Cálculos ({calculos.length})</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline ({contacts.length})</TabsTrigger>
               </TabsList>
 
@@ -244,6 +259,29 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
                       </div>
                     </>
                   )}
+              </TabsContent>
+
+              <TabsContent value="calculos" className="mt-4 space-y-2">
+                {loading ? <p className="text-sm text-muted-foreground">Carregando...</p>
+                  : calculos.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum cálculo vinculado.</p>
+                  ) : calculos.map((k) => (
+                    <div key={k.id} className="flex items-start justify-between rounded-xl border border-border p-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{CALC_TIPO_LABEL[k.tipo]}</Badge>
+                          {k.subtipo && <span className="text-xs text-muted-foreground">{k.subtipo}</span>}
+                        </div>
+                        {k.endereco && <div className="mt-1 truncate text-sm">{k.endereco}</div>}
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(k.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </div>
+                      </div>
+                      {k.valor_total != null && (
+                        <div className="font-semibold text-foreground">{fmtBRL(Number(k.valor_total))}</div>
+                      )}
+                    </div>
+                  ))}
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-4 space-y-3">

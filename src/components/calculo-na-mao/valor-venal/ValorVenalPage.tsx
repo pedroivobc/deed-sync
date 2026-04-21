@@ -292,7 +292,7 @@ export function ValorVenalPage() {
                 </div>
               )}
 
-              <ExportButtons onPdf={handlePdf} onWhatsApp={handleWhatsApp} />
+              <ExportButtons onExportPdf={handlePdf} onShareWhatsApp={handleWhatsApp} />
             </>
           ) : (
             <EmptyResultState message="Faça upload do IPTU ou preencha os campos manualmente para ver o cálculo." />

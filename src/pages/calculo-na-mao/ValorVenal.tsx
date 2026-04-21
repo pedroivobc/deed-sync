@@ -1,5 +1,10 @@
-import { Home } from "lucide-react";
-import { CalcPlaceholder } from "./Placeholder";
+import { AppLayout } from "@/components/AppLayout";
+import { ValorVenalPage } from "@/components/calculo-na-mao/valor-venal/ValorVenalPage";
+
 export default function ValorVenalRoute() {
-  return <CalcPlaceholder icon={Home} title="Valor Venal" description="Corrige valor venal do imóvel a partir do IPTU." />;
+  return (
+    <AppLayout title="Valor Venal">
+      <ValorVenalPage />
+    </AppLayout>
+  );
 }
