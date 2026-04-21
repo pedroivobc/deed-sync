@@ -46,8 +46,8 @@ export function CoraIntegrationCard() {
     !!token?.expires_at && new Date(token.expires_at).getTime() > Date.now();
 
   const refreshToken = async () => {
-    const { data } = await supabase
-      .from("cora_auth_tokens" as any)
+    const { data } = await (supabase as any)
+      .from("cora_auth_tokens")
       .select("environment, expires_at, updated_at")
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -84,8 +84,8 @@ export function CoraIntegrationCard() {
     setLogsOpen(true);
     setLoadingLogs(true);
     try {
-      const { data, error } = await supabase
-        .from("cora_api_logs" as any)
+      const { data, error } = await (supabase as any)
+        .from("cora_api_logs")
         .select("id, endpoint, method, response_status, error_message, duration_ms, created_at")
         .order("created_at", { ascending: false })
         .limit(20);
