@@ -261,9 +261,6 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
                   )}
               </TabsContent>
 
-              <TabsContent value="timeline" className="mt-4 space-y-3">
-              </TabsContent>
-
               <TabsContent value="calculos" className="mt-4 space-y-2">
                 {loading ? <p className="text-sm text-muted-foreground">Carregando...</p>
                   : calculos.length === 0 ? (
@@ -287,7 +284,7 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
                   ))}
               </TabsContent>
 
-              <TabsContent value="timeline-dup" className="mt-4 space-y-3 hidden">
+              <TabsContent value="timeline" className="mt-4 space-y-3">
                 {loading ? <p className="text-sm text-muted-foreground">Carregando...</p>
                   : contacts.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Nenhum contato registrado ainda.</p>
