@@ -83,19 +83,19 @@ export function ManualAdjustments({ value, onChange, warnings }: Props) {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label>Valor venal terreno (IPTU)</Label>
-            <CurrencyInput value={value.vvTerrenoIPTU} onChange={(v) => set("vvTerrenoIPTU", v)} />
+            <CurrencyInput value={value.vvTerrenoIPTU} onValueChange={(v) => set("vvTerrenoIPTU", v)} />
           </div>
           <div>
             <Label>Valor m² terreno (IPTU)</Label>
-            <CurrencyInput value={value.vM2TerrenoIPTU} onChange={(v) => set("vM2TerrenoIPTU", v)} />
+            <CurrencyInput value={value.vM2TerrenoIPTU} onValueChange={(v) => set("vM2TerrenoIPTU", v)} />
           </div>
           <div>
             <Label>Valor venal edificação (IPTU)</Label>
-            <CurrencyInput value={value.vvEdificacaoIPTU} onChange={(v) => set("vvEdificacaoIPTU", v)} />
+            <CurrencyInput value={value.vvEdificacaoIPTU} onValueChange={(v) => set("vvEdificacaoIPTU", v)} />
           </div>
           <div>
             <Label>Valor m² edificação (IPTU)</Label>
-            <CurrencyInput value={value.vM2EdificacaoIPTU} onChange={(v) => set("vM2EdificacaoIPTU", v)} />
+            <CurrencyInput value={value.vM2EdificacaoIPTU} onValueChange={(v) => set("vM2EdificacaoIPTU", v)} />
           </div>
         </CardContent>
       </Card>
@@ -130,11 +130,11 @@ export function ManualAdjustments({ value, onChange, warnings }: Props) {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <Label>Valor m² terreno (PGV)</Label>
-              <CurrencyInput value={value.valorM2TerrenoPJF} onChange={(v) => set("valorM2TerrenoPJF", v)} />
+              <CurrencyInput value={value.valorM2TerrenoPJF} onValueChange={(v) => set("valorM2TerrenoPJF", v)} />
             </div>
             <div>
               <Label>Valor m² edificação</Label>
-              <CurrencyInput value={value.valorM2EdificacaoPJF} onChange={(v) => set("valorM2EdificacaoPJF", v)} />
+              <CurrencyInput value={value.valorM2EdificacaoPJF} onValueChange={(v) => set("valorM2EdificacaoPJF", v)} />
             </div>
             <div>
               <Label>Fator comercialização</Label>
