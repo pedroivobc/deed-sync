@@ -1,5 +1,5 @@
-import { PenTool } from "lucide-react";
-import { CalcPlaceholder } from "./Placeholder";
+import { AppLayout } from "@/components/AppLayout";
+import { EscriturasPage } from "@/components/calculo-na-mao/escrituras/EscriturasPage";
 export default function EscriturasRoute() {
-  return <CalcPlaceholder icon={PenTool} title="Escrituras" description="Cálculo de custos cartoriais para escrituras." />;
+  return <AppLayout title="Escrituras"><EscriturasPage /></AppLayout>;
 }

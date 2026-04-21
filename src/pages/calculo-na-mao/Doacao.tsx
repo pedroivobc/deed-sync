@@ -1,5 +1,5 @@
-import { Handshake } from "lucide-react";
-import { CalcPlaceholder } from "./Placeholder";
+import { AppLayout } from "@/components/AppLayout";
+import { DoacaoPage } from "@/components/calculo-na-mao/doacao/DoacaoPage";
 export default function DoacaoRoute() {
-  return <CalcPlaceholder icon={Handshake} title="Doação" description="ITCD e custos cartoriais para doações." />;
+  return <AppLayout title="Doação"><DoacaoPage /></AppLayout>;
 }
