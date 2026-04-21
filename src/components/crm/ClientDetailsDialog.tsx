@@ -262,8 +262,32 @@ export function ClientDetailsDialog({ open, onOpenChange, client, onEdit, onChan
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-4 space-y-3">
-                {/* placeholder anchor */}
-                {null}
+              </TabsContent>
+
+              <TabsContent value="calculos" className="mt-4 space-y-2">
+                {loading ? <p className="text-sm text-muted-foreground">Carregando...</p>
+                  : calculos.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum cálculo vinculado.</p>
+                  ) : calculos.map((k) => (
+                    <div key={k.id} className="flex items-start justify-between rounded-xl border border-border p-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{CALC_TIPO_LABEL[k.tipo]}</Badge>
+                          {k.subtipo && <span className="text-xs text-muted-foreground">{k.subtipo}</span>}
+                        </div>
+                        {k.endereco && <div className="mt-1 truncate text-sm">{k.endereco}</div>}
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(k.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </div>
+                      </div>
+                      {k.valor_total != null && (
+                        <div className="font-semibold text-foreground">{fmtBRL(Number(k.valor_total))}</div>
+                      )}
+                    </div>
+                  ))}
+              </TabsContent>
+
+              <TabsContent value="timeline-dup" className="mt-4 space-y-3 hidden">
                 {loading ? <p className="text-sm text-muted-foreground">Carregando...</p>
                   : contacts.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Nenhum contato registrado ainda.</p>
