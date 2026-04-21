@@ -19,6 +19,7 @@ import { formatCurrency, formatPercent } from "@/lib/calculo-na-mao/currency";
 import { generateClementePDF, downloadPdf } from "@/lib/calculo-na-mao/pdfGenerator";
 import { buildCorrecaoInccMessage, shareToWhatsApp } from "@/lib/calculo-na-mao/whatsapp";
 import { useCreateCalculation } from "@/hooks/calculo-na-mao/useCalculations";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function CorrecaoContratualPage() {
@@ -46,7 +47,7 @@ export function CorrecaoContratualPage() {
         subtipo: `Correção INCC ${anoContrato} → ${INCC_ANO_BASE}`,
         valor_base: result.valorCompra,
         valor_total: result.valorCorrigido,
-        dados: { input: { valorCompra, anoContrato }, result } as unknown as Record<string, unknown>,
+        dados: { input: { valorCompra, anoContrato }, result } as unknown as Json,
       });
       toast.success("Cálculo salvo com sucesso");
     } catch (e) {
