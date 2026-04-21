@@ -15,6 +15,7 @@ import { callDrive, checkDriveSecrets } from "@/lib/drive";
 import { GeminiOcrCard } from "@/components/ocr/GeminiOcrCard";
 import { InfosimplesIntegrationCard } from "@/components/InfosimplesIntegrationCard";
 import { ClickSignIntegrationCard } from "@/components/ClickSignIntegrationCard";
+import { CoraIntegrationCard } from "@/components/CoraIntegrationCard";
 
 type SecretsStatus = Record<string, boolean>;
 
@@ -145,6 +146,7 @@ export function IntegrationsPanel() {
     <div className="space-y-6">
       <InfosimplesIntegrationCard />
       <ClickSignIntegrationCard />
+      <CoraIntegrationCard />
       <GeminiOcrCard />
       {loadError && (
         <Card className="rounded-2xl border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
