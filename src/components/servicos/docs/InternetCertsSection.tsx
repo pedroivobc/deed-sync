@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload, Zap, Loader2, ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,16 +16,7 @@ import { AttachedFileBadge } from "@/components/files/AttachedFileBadge";
 import { FilePreviewDialog } from "@/components/files/FilePreviewDialog";
 import { deleteDriveFile } from "@/lib/driveFiles";
 import { notify } from "@/lib/notify";
-import { requestSingleCertificate, type InfosimplesConsultationType } from "@/lib/infosimples";
 import { usePermissions } from "@/hooks/usePermissions";
-
-const CERT_TYPE_TO_CONSULTATION: Partial<Record<InternetCertificateType, InfosimplesConsultationType>> = {
-  trf6_fisico: "trf6_certidao",
-  trf6_eproc: "trf6_certidao",
-  tst: "tst_cndt",
-  trt3: "trt3_ceat",
-  receita_federal: "receita_federal_pgfn",
-};
 
 interface Props {
   serviceId: string;
@@ -35,8 +26,7 @@ interface Props {
 }
 
 export function InternetCertsSection({ serviceId, parties, internetCerts, onChanged }: Props) {
-  const { roles } = usePermissions();
-  const isAdminOrManager = roles.includes("administrador") || roles.includes("gerente");
+  usePermissions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<InternetCertificate | null>(null);
   const [defaultType, setDefaultType] = useState<InternetCertificateType | null>(null);
@@ -47,8 +37,6 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
 
   const [previewFor, setPreviewFor] = useState<InternetCertificate | null>(null);
   const [removeFileFor, setRemoveFileFor] = useState<InternetCertificate | null>(null);
-
-  const [issuingType, setIssuingType] = useState<InternetCertificateType | null>(null);
 
   const vendors = parties.filter((p) => p.role === "vendedor" || p.role === "socio_vendedor");
 
@@ -142,67 +130,6 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
     onChanged();
   };
 
-  // Emite uma certidão individualmente via Infosimples (apenas tipos automáticos).
-  const onIssueAuto = async (cfgType: InternetCertificateType, cert: InternetCertificate | undefined) => {
-    const consultation = CERT_TYPE_TO_CONSULTATION[cfgType];
-    if (!consultation) return;
-    if (!isAdminOrManager) {
-      notify.error("Apenas administradores e gerentes podem emitir certidões automáticas.");
-      return;
-    }
-    if (vendors.length === 0) {
-      notify.error("Cadastre ao menos um vendedor antes de emitir certidões.");
-      return;
-    }
-    const party = vendors.find((v) => v.cpf_cnpj && v.cpf_cnpj.trim().length > 0);
-    if (!party?.cpf_cnpj) {
-      notify.error("Vendedor sem CPF/CNPJ cadastrado.");
-      return;
-    }
-
-    setIssuingType(cfgType);
-    try {
-      let certificateId = cert?.id ?? null;
-      if (!certificateId) {
-        const today = new Date().toISOString().slice(0, 10);
-        const { data: created, error: insErr } = await supabase
-          .from("service_internet_certificates")
-          .insert({
-            service_id: serviceId,
-            party_id: party.id,
-            certificate_type: cfgType,
-            request_date: today,
-            status: "solicitada",
-            auto_emitted: true,
-          })
-          .select()
-          .single();
-        if (insErr || !created) {
-          notify.error("Não foi possível preparar a certidão", { description: insErr?.message });
-          return;
-        }
-        certificateId = created.id;
-        onChanged();
-      }
-
-      const res = await requestSingleCertificate({
-        consultation_type: consultation,
-        cpf_cnpj: party.cpf_cnpj,
-        service_id: serviceId,
-        party_id: party.id,
-        person_type: party.person_type === "PJ" ? "PJ" : "PF",
-      });
-      if (!res.ok || !res.result.success) {
-        notify.error("Falha ao emitir certidão", { description: res.error ?? res.result.error });
-        return;
-      }
-      notify.success(`Certidão emitida (${res.result.classification ?? "ok"}).`);
-      onChanged();
-    } finally {
-      setIssuingType(null);
-    }
-  };
-
   return (
     <section id="section-certidoes_internet" className="rounded-xl border border-border bg-card/50 p-4">
       <div className="mb-3">
@@ -217,14 +144,11 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {INTERNET_CERT_DEFAULTS.map((cfg) => {
           const cert = internetCerts.find((c) => c.certificate_type === cfg.type);
-          const canAuto = !!CERT_TYPE_TO_CONSULTATION[cfg.type] && isAdminOrManager;
           return (
             <InternetCertCard
               key={cfg.type}
               cfg={cfg}
               cert={cert}
-              canAutoIssue={canAuto}
-              isIssuing={issuingType === cfg.type}
               onCreate={() => openNew(cfg.type)}
               onEdit={() => cert && openEdit(cert)}
               onRenew={() => cert && onRenew(cert)}
@@ -232,7 +156,6 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
               onAttach={() => openAttach(cert ?? cfg.type)}
               onPreview={() => cert && setPreviewFor(cert)}
               onRemoveFile={() => cert && setRemoveFileFor(cert)}
-              onIssueAuto={() => onIssueAuto(cfg.type, cert)}
             />
           );
         })}
@@ -316,13 +239,11 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
 }
 
 function InternetCertCard({
-  cfg, cert, canAutoIssue, isIssuing,
-  onCreate, onEdit, onRenew, onDelete, onAttach, onPreview, onRemoveFile, onIssueAuto,
+  cfg, cert,
+  onCreate, onEdit, onRenew, onDelete, onAttach, onPreview, onRemoveFile,
 }: {
   cfg: typeof INTERNET_CERT_DEFAULTS[number];
   cert: InternetCertificate | undefined;
-  canAutoIssue: boolean;
-  isIssuing: boolean;
   onCreate: () => void;
   onEdit: () => void;
   onRenew: () => void;
@@ -330,13 +251,10 @@ function InternetCertCard({
   onAttach: () => void;
   onPreview: () => void;
   onRemoveFile: () => void;
-  onIssueAuto: () => void;
 }) {
   const v = cert ? computeValidity(cert.expected_validity_date) : null;
   const status = cert?.status ?? "pendente";
   const hasFile = !!cert?.drive_file_id;
-  const isTjmg = cfg.type === "tjmg_civel";
-  const supportsAuto = !!CERT_TYPE_TO_CONSULTATION[cfg.type];
 
   return (
     <div className="space-y-2 rounded-lg border border-border bg-background p-3">
@@ -348,23 +266,12 @@ function InternetCertCard({
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge variant="outline" className="text-[9px]">{INTERNET_STATUS_LABEL[status]}</Badge>
         {v && cert?.expected_validity_date && <Badge className={cn("text-[9px]", v.badgeClass)}>{v.label}</Badge>}
-        {cert?.classification && <ClassificationBadge value={cert.classification} />}
-        {cert?.validation_status && <ValidationBadge value={cert.validation_status} />}
       </div>
 
       {cert?.expected_validity_date && (
         <p className="text-[11px] text-muted-foreground">
           Validade: {new Date(cert.expected_validity_date).toLocaleDateString("pt-BR")}
         </p>
-      )}
-
-      {isTjmg && (
-        <div className="flex items-start gap-1.5 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 text-[11px] text-warning-foreground">
-          <Info className="mt-0.5 h-3 w-3 shrink-0 text-warning" />
-          <span>
-            Infosimples ainda não cobre TJMG. Emita manualmente no RUPE e anexe o PDF aqui.
-          </span>
-        </div>
       )}
 
       {hasFile && cert ? (
@@ -380,20 +287,6 @@ function InternetCertCard({
       ) : (
         <Button size="sm" variant="outline" className="w-full" onClick={onAttach}>
           <Upload className="mr-1.5 h-3 w-3" /> Anexar certidão emitida
-        </Button>
-      )}
-
-      {supportsAuto && (
-        <Button
-          size="sm"
-          variant="default"
-          className="w-full gap-1.5"
-          onClick={onIssueAuto}
-          disabled={!canAutoIssue || isIssuing}
-          title={!canAutoIssue ? "Apenas administradores e gerentes" : undefined}
-        >
-          {isIssuing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-          {isIssuing ? "Emitindo..." : "Emitir agora"}
         </Button>
       )}
 
@@ -425,46 +318,6 @@ function InternetCertCard({
   );
 }
 
-function ClassificationBadge({ value }: { value: NonNullable<InternetCertificate["classification"]> }) {
-  const map = {
-    negativa: { label: "Negativa", cls: "bg-success/15 text-success border-success/30" },
-    positiva: { label: "Positiva", cls: "bg-destructive/15 text-destructive border-destructive/30" },
-    positiva_com_efeito_negativa: { label: "Pos. c/ efeito neg.", cls: "bg-warning/15 text-warning border-warning/30" },
-    inconclusiva: { label: "Inconclusiva", cls: "bg-muted text-muted-foreground border-border" },
-  } as const;
-  const v = map[value];
-  return <Badge variant="outline" className={cn("text-[9px]", v.cls)}>{v.label}</Badge>;
-}
-
-function ValidationBadge({ value }: { value: NonNullable<InternetCertificate["validation_status"]> }) {
-  if (value === "validated") {
-    return (
-      <Badge variant="outline" className="gap-1 border-success/30 bg-success/10 text-success text-[9px]">
-        <ShieldCheck className="h-3 w-3" /> Validado IA
-      </Badge>
-    );
-  }
-  if (value === "mismatch") {
-    return (
-      <Badge variant="outline" className="gap-1 border-destructive/30 bg-destructive/10 text-destructive text-[9px]">
-        <ShieldAlert className="h-3 w-3" /> Divergência
-      </Badge>
-    );
-  }
-  if (value === "error") {
-    return (
-      <Badge variant="outline" className="gap-1 border-warning/30 bg-warning/10 text-warning text-[9px]">
-        <AlertTriangle className="h-3 w-3" /> Erro IA
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="outline" className="gap-1 text-[9px] text-muted-foreground">
-      <Loader2 className="h-3 w-3 animate-spin" /> Validando
-    </Badge>
-  );
-}
-
 function CustomCertCard({
   cert, onEdit, onRenew, onDelete, onAttach, onPreview, onRemoveFile,
 }: {
@@ -485,8 +338,6 @@ function CustomCertCard({
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge variant="outline" className="text-[9px]">{INTERNET_STATUS_LABEL[cert.status]}</Badge>
         {cert.expected_validity_date && <Badge className={cn("text-[9px]", v.badgeClass)}>{v.label}</Badge>}
-        {cert.classification && <ClassificationBadge value={cert.classification} />}
-        {cert.validation_status && <ValidationBadge value={cert.validation_status} />}
       </div>
 
       {hasFile ? (
