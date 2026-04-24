@@ -58,69 +58,6 @@ export type Database = {
           },
         ]
       }
-      calculos: {
-        Row: {
-          client_id: string | null
-          created_at: string
-          dados: Json
-          endereco: string | null
-          id: string
-          inscricao: string | null
-          service_id: string | null
-          subtipo: string | null
-          tipo: Database["public"]["Enums"]["calculo_tipo"]
-          updated_at: string
-          user_id: string
-          valor_base: number | null
-          valor_total: number | null
-        }
-        Insert: {
-          client_id?: string | null
-          created_at?: string
-          dados?: Json
-          endereco?: string | null
-          id?: string
-          inscricao?: string | null
-          service_id?: string | null
-          subtipo?: string | null
-          tipo: Database["public"]["Enums"]["calculo_tipo"]
-          updated_at?: string
-          user_id: string
-          valor_base?: number | null
-          valor_total?: number | null
-        }
-        Update: {
-          client_id?: string | null
-          created_at?: string
-          dados?: Json
-          endereco?: string | null
-          id?: string
-          inscricao?: string | null
-          service_id?: string | null
-          subtipo?: string | null
-          tipo?: Database["public"]["Enums"]["calculo_tipo"]
-          updated_at?: string
-          user_id?: string
-          valor_base?: number | null
-          valor_total?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "calculos_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "calculos_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       clicksign_envelopes: {
         Row: {
           cancelled_at: string | null
@@ -1703,6 +1640,7 @@ export type Database = {
           subject: string
           type: Database["public"]["Enums"]["service_type"]
           updated_at: string
+          valor_calculo_final: number | null
         }
         Insert: {
           assigned_to?: string | null
@@ -1720,6 +1658,7 @@ export type Database = {
           subject: string
           type: Database["public"]["Enums"]["service_type"]
           updated_at?: string
+          valor_calculo_final?: number | null
         }
         Update: {
           assigned_to?: string | null
@@ -1737,6 +1676,7 @@ export type Database = {
           subject?: string
           type?: Database["public"]["Enums"]["service_type"]
           updated_at?: string
+          valor_calculo_final?: number | null
         }
         Relationships: [
           {
@@ -1855,14 +1795,6 @@ export type Database = {
     Enums: {
       app_role: "administrador" | "gerente" | "colaborador"
       audit_action: "create" | "update" | "delete" | "login" | "logout"
-      calculo_tipo:
-        | "valor_venal"
-        | "escritura"
-        | "doacao"
-        | "correcao_incc"
-        | "financiamento_caixa"
-        | "financiamento_privado"
-        | "regularizacao"
       civil_certificate_status:
         | "pendente"
         | "solicitada"
@@ -2168,15 +2100,6 @@ export const Constants = {
     Enums: {
       app_role: ["administrador", "gerente", "colaborador"],
       audit_action: ["create", "update", "delete", "login", "logout"],
-      calculo_tipo: [
-        "valor_venal",
-        "escritura",
-        "doacao",
-        "correcao_incc",
-        "financiamento_caixa",
-        "financiamento_privado",
-        "regularizacao",
-      ],
       civil_certificate_status: [
         "pendente",
         "solicitada",
