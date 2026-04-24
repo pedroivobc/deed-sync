@@ -13,7 +13,6 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { callDrive, checkDriveSecrets } from "@/lib/drive";
 import { GeminiOcrCard } from "@/components/ocr/GeminiOcrCard";
-import { InfosimplesIntegrationCard } from "@/components/InfosimplesIntegrationCard";
 import { ClickSignIntegrationCard } from "@/components/ClickSignIntegrationCard";
 import { CoraIntegrationCard } from "@/components/CoraIntegrationCard";
 
@@ -144,7 +143,6 @@ export function IntegrationsPanel() {
 
   return (
     <div className="space-y-6">
-      <InfosimplesIntegrationCard />
       <ClickSignIntegrationCard />
       <CoraIntegrationCard />
       <GeminiOcrCard />
