@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, CalendarIcon, X } from "lucide-react";
+import { ChevronLeft, CalendarIcon, X, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +36,7 @@ import { ActivityTimeline } from "./ActivityTimeline";
 import { CompleteConfirmDialog } from "./CompleteConfirmDialog";
 import { DriveFolderButton } from "@/components/DriveFolderButton";
 import { callDrive } from "@/lib/drive";
+import { MoneyInput } from "@/components/servicos/MoneyInput";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
@@ -67,6 +68,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [pastaFisica, setPastaFisica] = useState(false);
 
+  // Valor final do cálculo (sistema externo)
+  const [valorCalculoFinal, setValorCalculoFinal] = useState<number | null>(null);
+
   // Custom fields
   const [customFields, setCustomFields] = useState<AnyCustomFields>(emptyForType("escritura"));
 
@@ -89,6 +93,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       setDueDate(service.due_date ? new Date(service.due_date) : null);
       setAssignedTo(service.assigned_to ?? user?.id ?? "");
       setPastaFisica(service.pasta_fisica);
+      setValorCalculoFinal(
+        service.valor_calculo_final != null ? Number(service.valor_calculo_final) : null,
+      );
       // parse custom_fields — fallback to empty for type
       const base = emptyForType(service.type);
       const parsed = service.custom_fields && typeof service.custom_fields === "object"
@@ -111,6 +118,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       setDueDate(null);
       setAssignedTo(user?.id ?? "");
       setPastaFisica(false);
+      setValorCalculoFinal(null);
       setCustomFields(emptyForType("escritura"));
     }
   }, [open, service, user?.id]);
@@ -198,6 +206,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       stage, due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : null,
       assigned_to: assignedTo || null, pasta_fisica: pastaFisica,
       completed_at, custom_fields: cf as unknown as Json,
+      valor_calculo_final: valorCalculoFinal,
     };
 
     let result;
