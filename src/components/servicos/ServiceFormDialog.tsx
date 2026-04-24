@@ -443,6 +443,40 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                     </div>
                   </FormSection>
 
+                  {/* Valores do Serviço — link externo p/ cálculo + valor final */}
+                  <FormSection title="Valores do Serviço" id="section-valores">
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Abra o Cálculo na Mão, faça o cálculo, e cole o valor final aqui.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2"
+                        asChild
+                      >
+                        <a
+                          href="https://c-lculo-de-m-o-2-0v.vercel.app/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          🔗 Abrir Cálculo na Mão
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </Button>
+                      <div className="space-y-2 max-w-xs">
+                        <Label htmlFor="valor-calculo-final" className="text-xs">
+                          Valor final do cálculo (R$)
+                        </Label>
+                        <MoneyInput
+                          id="valor-calculo-final"
+                          value={valorCalculoFinal}
+                          onChange={setValorCalculoFinal}
+                        />
+                      </div>
+                    </div>
+                  </FormSection>
+
                   {/* Tipo-specific forms */}
                   {type === "escritura" && (
                     <div id="section-escritura-wrapper">
