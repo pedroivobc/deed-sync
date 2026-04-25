@@ -79,6 +79,7 @@ export default function Servicos() {
   // Dialog
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceRow | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Delete confirm
@@ -395,9 +396,14 @@ export default function Servicos() {
               <Button variant="ghost" size="sm" onClick={clearFilters}>Limpar</Button>
             )}
 
-            <Button onClick={handleNew} className="ml-auto gap-1.5">
-              <Plus className="h-4 w-4" /> Novo serviço
-            </Button>
+            <div className="ml-auto flex gap-2">
+              <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+                <Upload className="h-4 w-4" /> Importar CSV
+              </Button>
+              <Button onClick={handleNew} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Novo serviço
+              </Button>
+            </div>
           </div>
         </div>
 
