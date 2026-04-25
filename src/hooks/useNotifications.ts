@@ -75,13 +75,22 @@ export function useNotifications() {
       channelUserIdRef.current = null;
     }
 
-    const channel = supabase.channel(`notifications:${user.id}`);
-    channel.on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-      () => loadRef.current?.()
-    );
-    channel.subscribe();
+    // CRITICAL: .on() MUST be chained before .subscribe() in a single
+    // expression. Calling .on() on an already-subscribed channel throws
+    // "cannot add postgres_changes callbacks after subscribe()".
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => loadRef.current?.()
+      )
+      .subscribe();
 
     channelRef.current = channel;
     channelUserIdRef.current = user.id;
