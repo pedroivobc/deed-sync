@@ -552,6 +552,12 @@ export default function Servicos() {
         onSaved={loadServices}
       />
 
+      <ImportCsvDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={loadServices}
+      />
+
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(o) => !o && setToDelete(null)}
