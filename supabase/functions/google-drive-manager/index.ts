@@ -401,6 +401,67 @@ async function actionListFolderContents(_ctx: Ctx, params: { folder_id: string }
   return res.json();
 }
 
+/**
+ * List ALL files (recursively) under a given service or client root folder.
+ * Includes the subfolder name each file belongs to so the UI can group them.
+ */
+async function actionListEntityFiles(
+  ctx: Ctx,
+  params: { entity_type: "service" | "client"; entity_id: string },
+) {
+  // Fetch every drive_folders row for this entity (root + subfolders).
+  const { data: folders, error } = await ctx.supabase
+    .from("drive_folders")
+    .select("drive_folder_id, subfolder_type, folder_path")
+    .eq("entity_type", params.entity_type)
+    .eq("entity_id", params.entity_id);
+
+  if (error) throw new Error(`folders lookup failed: ${error.message}`);
+  if (!folders || folders.length === 0) {
+    return { files: [], folders: [], folder_url: null };
+  }
+
+  type Row = { drive_folder_id: string; subfolder_type: string; folder_path: string };
+  const folderRows = folders as unknown as Row[];
+  const rootRow = folderRows.find((f) => f.subfolder_type === "root") ?? null;
+
+  const all: Array<Record<string, unknown>> = [];
+  for (const f of folderRows) {
+    try {
+      const r = await driveFetch(
+        `/files?q=${encodeURIComponent(
+          `'${f.drive_folder_id}' in parents and trashed=false and mimeType != 'application/vnd.google-apps.folder'`,
+        )}&fields=files(id,name,mimeType,size,modifiedTime,thumbnailLink,webViewLink)&pageSize=200&supportsAllDrives=true&includeItemsFromAllDrives=true`,
+      );
+      if (!r.ok) continue;
+      const j = await r.json();
+      for (const file of j.files ?? []) {
+        all.push({
+          ...file,
+          subfolder_type: f.subfolder_type,
+          folder_path: f.folder_path,
+        });
+      }
+    } catch (e) {
+      console.error("listEntityFiles partial fail", e);
+    }
+  }
+
+  // Sort by modifiedTime DESC
+  all.sort((a, b) => {
+    const am = String(a.modifiedTime ?? "");
+    const bm = String(b.modifiedTime ?? "");
+    return bm.localeCompare(am);
+  });
+
+  return {
+    files: all,
+    folders: folderRows,
+    folder_url: rootRow ? `https://drive.google.com/drive/folders/${rootRow.drive_folder_id}` : null,
+    root_folder_id: rootRow?.drive_folder_id ?? null,
+  };
+}
+
 async function actionGetFileMetadata(_ctx: Ctx, params: { file_id: string }) {
   const res = await driveFetch(
     `/files/${params.file_id}?fields=id,name,mimeType,size,modifiedTime,webViewLink,thumbnailLink,parents&supportsAllDrives=true`,
@@ -634,6 +695,9 @@ Deno.serve(async (req) => {
         break;
       case "list_folder_contents":
         result = await actionListFolderContents(ctx, params as never);
+        break;
+      case "list_entity_files":
+        result = await actionListEntityFiles(ctx, params as never);
         break;
       case "get_file_metadata":
         result = await actionGetFileMetadata(ctx, params as never);

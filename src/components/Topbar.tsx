@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import { IntegrationsStatusBadge } from "@/components/IntegrationsStatusBadge";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
@@ -20,6 +21,7 @@ export function Topbar({ title }: Props) {
         <span className="mt-1 text-xs capitalize text-muted-foreground">{today}</span>
       </div>
       <div className="flex items-center gap-1">
+        <IntegrationsStatusBadge />
         <NotificationsBell />
         <ThemeToggle />
         <div className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">

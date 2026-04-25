@@ -34,6 +34,7 @@ import { RegularizacaoForm } from "./forms/RegularizacaoForm";
 import { ProgressPanel } from "./ProgressPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { CompleteConfirmDialog } from "./CompleteConfirmDialog";
+import { ProcessFilesSection } from "./ProcessFilesSection";
 import { callDrive } from "@/lib/drive";
 import { MoneyInput } from "@/components/servicos/MoneyInput";
 import { DocChecklistPanel } from "./docs/DocChecklistPanel";
@@ -501,6 +502,11 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                     <FormSection title="Histórico de atividades" id="section-historico">
                       <ActivityTimeline serviceId={service.id} refreshKey={logRefresh} />
                     </FormSection>
+                  )}
+
+                  {/* Documentos do Processo — gerenciador interno do Drive */}
+                  {isEdit && service && (
+                    <ProcessFilesSection serviceId={service.id} />
                   )}
                 </div>
 
