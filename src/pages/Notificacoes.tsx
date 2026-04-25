@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Info,
   Trash2,
+  Archive,
 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -25,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { notify, humanizeBackendError } from "@/lib/notify";
 import { cn } from "@/lib/utils";
-import type { AppNotification, NotificationType } from "@/hooks/useNotifications";
+import type { AppNotification, NotificationType, NotificationCategory } from "@/hooks/useNotifications";
 
 const TYPE_ICON: Record<NotificationType, typeof Bell> = {
   critical: AlertCircle,
@@ -42,6 +43,7 @@ const TYPE_COLOR: Record<NotificationType, string> = {
 
 type StatusFilter = "all" | "unread" | "read";
 type PeriodFilter = "all" | "today" | "week" | "month";
+type CategoryFilter = NotificationCategory | "all";
 const PAGE_SIZE = 25;
 
 function periodGroup(d: Date): "Hoje" | "Ontem" | "Esta semana" | "Mais antigas" {
@@ -59,6 +61,7 @@ export default function Notificacoes() {
   const [type, setType] = useState<NotificationType | "all">("all");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [period, setPeriod] = useState<PeriodFilter>("all");
+  const [category, setCategory] = useState<CategoryFilter>("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -69,6 +72,7 @@ export default function Notificacoes() {
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
+      .is("dismissed_at", null)
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) {
@@ -87,6 +91,7 @@ export default function Notificacoes() {
     const now = Date.now();
     return items.filter((n) => {
       if (type !== "all" && n.type !== type) return false;
+      if (category !== "all" && n.category !== category) return false;
       if (status === "unread" && n.read_at) return false;
       if (status === "read" && !n.read_at) return false;
       if (period !== "all") {
@@ -98,9 +103,9 @@ export default function Notificacoes() {
       }
       return true;
     });
-  }, [items, type, status, period]);
+  }, [items, type, category, status, period]);
 
-  useEffect(() => { setPage(1); }, [type, status, period]);
+  useEffect(() => { setPage(1); }, [type, category, status, period]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -156,6 +161,18 @@ export default function Notificacoes() {
     load();
   };
 
+  const dismissSelected = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const { error } = await supabase
+      .from("notifications")
+      .update({ dismissed_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) return notify.error(humanizeBackendError(error.message));
+    notify.success(`${ids.length} descartada(s).`);
+    load();
+  };
+
   const onOpen = async (n: AppNotification) => {
     if (!n.read_at) {
       await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", n.id);
@@ -180,6 +197,19 @@ export default function Notificacoes() {
                 <SelectItem value="warning">Aviso</SelectItem>
                 <SelectItem value="info">Informativo</SelectItem>
                 <SelectItem value="success">Sucesso</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="min-w-[140px] flex-1">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Categoria</label>
+            <Select value={category} onValueChange={(v) => setCategory(v as CategoryFilter)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="importante">Importantes</SelectItem>
+                <SelectItem value="tarefa">Tarefas</SelectItem>
+                <SelectItem value="agenda">Agenda</SelectItem>
+                <SelectItem value="sistema">Sistema</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -217,6 +247,9 @@ export default function Notificacoes() {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={!selected.size} onClick={markSelectedRead}>
               Marcar como lidas
+            </Button>
+            <Button variant="outline" size="sm" disabled={!selected.size} onClick={dismissSelected}>
+              <Archive className="mr-1 h-4 w-4" /> Descartar
             </Button>
             <Button
               variant="outline"
