@@ -13,11 +13,25 @@ interface Props {
   /** When true, render cards via @tanstack/react-virtual (used when total cards > 50). */
   virtualize?: boolean;
   alertsMap?: Record<string, ServiceAlerts>;
+  /** Selection support */
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string, e?: React.MouseEvent) => void;
+  onClickWithModifiers?: (e: React.MouseEvent, id: string) => boolean;
 }
 
 const ESTIMATED_CARD_HEIGHT = 132;
 
-export function KanbanColumn({ stage, services, onOpen, virtualize = false, alertsMap }: Props) {
+export function KanbanColumn({
+  stage,
+  services,
+  onOpen,
+  virtualize = false,
+  alertsMap,
+  selectedIds,
+  onToggleSelect,
+  onClickWithModifiers,
+}: Props) {
+  const hasSelection = (selectedIds?.size ?? 0) > 0;
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -79,13 +93,32 @@ export function KanbanColumn({ stage, services, onOpen, virtualize = false, aler
                     paddingBottom: 8,
                   }}
                 >
-                  <ServiceCard service={s} onOpen={onOpen} alerts={alertsMap?.[s.id]} />
+                  <ServiceCard
+                    service={s}
+                    onOpen={onOpen}
+                    alerts={alertsMap?.[s.id]}
+                    selected={selectedIds?.has(s.id) ?? false}
+                    hasSelection={hasSelection}
+                    onToggleSelect={onToggleSelect}
+                    onClickWithModifiers={onClickWithModifiers}
+                  />
                 </div>
               );
             })}
           </div>
         ) : (
-          services.map((s) => <ServiceCard key={s.id} service={s} onOpen={onOpen} alerts={alertsMap?.[s.id]} />)
+          services.map((s) => (
+            <ServiceCard
+              key={s.id}
+              service={s}
+              onOpen={onOpen}
+              alerts={alertsMap?.[s.id]}
+              selected={selectedIds?.has(s.id) ?? false}
+              hasSelection={hasSelection}
+              onToggleSelect={onToggleSelect}
+              onClickWithModifiers={onClickWithModifiers}
+            />
+          ))
         )}
       </div>
     </div>
