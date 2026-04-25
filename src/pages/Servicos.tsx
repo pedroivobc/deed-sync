@@ -30,6 +30,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { KanbanSkeleton, TableRowsSkeleton } from "@/components/ui/skeletons";
 import { IconAction } from "@/components/ui/icon-action";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { notify, humanizeBackendError } from "@/lib/notify";
 
@@ -44,6 +45,8 @@ import { getInitials } from "@/lib/clientUi";
 import { KanbanColumn } from "@/components/servicos/KanbanColumn";
 import { ServiceFormDialog } from "@/components/servicos/ServiceFormDialog";
 import { ImportCsvDialog } from "@/components/servicos/ImportCsvDialog";
+import { BulkActionBar } from "@/components/servicos/BulkActionBar";
+import { useServiceSelection } from "@/hooks/useServiceSelection";
 import type { ServiceCardData } from "@/components/servicos/ServiceCard";
 import { useServiceAlerts } from "@/hooks/useServiceAlerts";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -91,6 +94,10 @@ export default function Servicos() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  // Multi-selection — applies to both kanban and list. Order = filtered, so
+  // shift+click works left-to-right / top-to-bottom across the visible set.
+  const selection = useServiceSelection(services);
 
   // Load
   const loadServices = async () => {
@@ -224,6 +231,8 @@ export default function Servicos() {
   const onDragEnd = async (e: DragEndEvent) => {
     const { active, over } = e;
     if (!over) return;
+    // Don't allow drag while multi-select is active
+    if (selection.count > 0) return;
     const newStage = over.id as ServiceStage;
     const id = active.id as string;
     const svc = services.find((s) => s.id === id);
@@ -275,6 +284,19 @@ export default function Servicos() {
     if (svc) {
       setEditing(svc);
       setFormOpen(true);
+    }
+  };
+
+  // Header checkbox state for list view
+  const allOnPageSelected =
+    paginated.length > 0 && paginated.every((s) => selection.isSelected(s.id));
+  const togglePageSelection = () => {
+    if (allOnPageSelected) {
+      paginated.forEach((s) => selection.toggle(s.id));
+    } else {
+      paginated.forEach((s) => {
+        if (!selection.isSelected(s.id)) selection.toggle(s.id);
+      });
     }
   };
 
@@ -407,6 +429,14 @@ export default function Servicos() {
           </div>
         </div>
 
+        <BulkActionBar
+          selectedIds={selection.selectedIds}
+          users={users}
+          canDelete={services.some((s) => selection.isSelected(s.id) && canDeleteService(s.created_by))}
+          onClear={selection.clear}
+          onChanged={loadServices}
+        />
+
         {/* Content */}
         {loading ? (
           view === "kanban" ? (
@@ -440,6 +470,9 @@ export default function Servicos() {
                   onOpen={handleOpenEdit}
                   virtualize={services.length > 50}
                   alertsMap={alertsMap}
+                  selectedIds={selection.selected}
+                  onToggleSelect={(id) => selection.toggle(id)}
+                  onClickWithModifiers={(e, id) => selection.handleClick(e, id)}
                 />
               ))}
             </div>
@@ -449,6 +482,13 @@ export default function Servicos() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8">
+                    <Checkbox
+                      checked={allOnPageSelected}
+                      onCheckedChange={togglePageSelection}
+                      aria-label="Selecionar todos da página"
+                    />
+                  </TableHead>
                   <SortHeader label="Assunto" col="subject" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
                   <TableHead>Tipo</TableHead>
                   <TableHead>Cliente</TableHead>
@@ -462,7 +502,30 @@ export default function Servicos() {
               </TableHeader>
               <TableBody>
                 {paginated.map((s) => (
-                  <TableRow key={s.id} className="cursor-pointer" onClick={() => handleOpenEdit(s.id)}>
+                  <TableRow
+                    key={s.id}
+                    className={cn(
+                      "cursor-pointer",
+                      selection.isSelected(s.id) && "bg-primary/5"
+                    )}
+                    onClick={(e) => {
+                      // Shift/Ctrl/Cmd handled by selection helper
+                      if (selection.handleClick(e, s.id)) return;
+                      // If a selection is already active, plain click toggles
+                      if (selection.count > 0) {
+                        selection.toggle(s.id);
+                        return;
+                      }
+                      handleOpenEdit(s.id);
+                    }}
+                  >
+                    <TableCell onClick={(e) => e.stopPropagation()} className="w-8">
+                      <Checkbox
+                        checked={selection.isSelected(s.id)}
+                        onCheckedChange={() => selection.toggle(s.id)}
+                        aria-label="Selecionar serviço"
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {s.type === "escritura" && alertsMap[s.id]?.hasExpired && (
