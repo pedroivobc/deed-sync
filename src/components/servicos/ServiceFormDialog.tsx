@@ -86,6 +86,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
   // Initialize on open / service change
   useEffect(() => {
     if (!open) return;
+    // Reset doc progress whenever the dialog (re)opens with a new context.
+    setDocProgress(null);
     if (service) {
       setStep(2);
       setType(service.type);
