@@ -73,7 +73,7 @@ export function AppSidebar() {
             if (!allowed && item.lockedWhenDenied) {
               return (
                 <div key={item.url}>
-                {idx === 3 && <CalculoExternalLink />}
+                {idx === 4 && <CalculoExternalLink />}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
@@ -96,7 +96,7 @@ export function AppSidebar() {
 
             return (
               <div key={item.url}>
-                {idx === 3 && <CalculoExternalLink />}
+                {idx === 4 && <CalculoExternalLink />}
                 <NavLink
                   to={item.url}
                   end={item.url === "/"}
