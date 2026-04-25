@@ -201,11 +201,9 @@ export function ProcessFilesSection({ serviceId }: Props) {
   };
 
   return (
-    <FormSection
-      title="Documentos do Processo"
-      id="section-arquivos"
-      action={
-        <div className="flex items-center gap-1">
+    <FormSection title="Documentos do Processo" id="section-arquivos">
+      <div className="space-y-3">
+        <div className="-mt-2 mb-1 flex justify-end">
           <Button
             type="button"
             variant="ghost"
@@ -222,9 +220,6 @@ export function ProcessFilesSection({ serviceId }: Props) {
             Atualizar
           </Button>
         </div>
-      }
-    >
-      <div className="space-y-3">
         {/* Upload zone */}
         <div
           onDragOver={(e) => {
@@ -394,7 +389,7 @@ export function ProcessFilesSection({ serviceId }: Props) {
         title="Remover arquivo"
         description={`Tem certeza que deseja remover "${confirmDelete?.name ?? ""}" do Google Drive? Esta ação não pode ser desfeita.`}
         confirmText="Remover"
-        variant="destructive"
+        destructive
         onConfirm={() => confirmDelete && handleDelete(confirmDelete)}
       />
     </FormSection>
