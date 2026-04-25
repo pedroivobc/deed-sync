@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   DndContext,
   DragEndEvent,
@@ -77,6 +78,7 @@ export default function Servicos() {
   // Dialog
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceRow | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Delete confirm
   const [toDelete, setToDelete] = useState<ServiceFull | null>(null);
@@ -110,6 +112,31 @@ export default function Servicos() {
       setUsers((data ?? []) as ProfileRow[]);
     });
   }, []);
+
+  // Deep-link from CommandPalette: ?service=ID opens the service editor; ?new=1 opens new form.
+  useEffect(() => {
+    const newParam = searchParams.get("new");
+    const svcParam = searchParams.get("service");
+    if (newParam === "1") {
+      setEditing(null);
+      setFormOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("new");
+      setSearchParams(next, { replace: true });
+      return;
+    }
+    if (svcParam && services.length > 0) {
+      const svc = services.find((s) => s.id === svcParam);
+      if (svc) {
+        setEditing(svc);
+        setFormOpen(true);
+        const next = new URLSearchParams(searchParams);
+        next.delete("service");
+        setSearchParams(next, { replace: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, services.length]);
 
   // Realtime subscription
   useEffect(() => {

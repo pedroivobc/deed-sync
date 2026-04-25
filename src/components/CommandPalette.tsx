@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CommandDialog,
+  Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
@@ -9,68 +9,122 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
+  ArrowRight,
   Briefcase,
   Clock,
+  FileText,
   Home,
   LogOut,
   Moon,
   Plus,
   Settings,
+  Star,
+  StarOff,
   Sun,
+  User,
   Users,
   Wallet,
-  X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+import { SERVICE_TYPE_LABEL } from "@/lib/serviceUi";
+
+/* -------------------------------------------------------------------------- */
+/*  Types & storage                                                            */
+/* -------------------------------------------------------------------------- */
+
+type ResultGroup = "Clientes" | "Serviços" | "Documentos";
 
 interface SearchResult {
   id: string;
+  group: ResultGroup;
   label: string;
   hint?: string;
-  group: "Clientes" | "Serviços";
   to: string;
+  /** stable key for favorites/recents */
+  key: string;
 }
 
-const HISTORY_KEY = "clemente-cmdk-history";
-const HISTORY_MAX = 5;
+const RECENT_KEY = "clemente-cmdk-recent";
+const FAVORITE_KEY = "clemente-cmdk-favorites";
+const MAX_RECENT = 6;
 
-function loadHistory(): string[] {
+function loadList(key: string): SearchResult[] {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr.filter((s) => typeof s === "string").slice(0, HISTORY_MAX) : [];
+    return Array.isArray(arr) ? arr.filter((x) => x && typeof x.key === "string") : [];
   } catch {
     return [];
   }
 }
-function saveHistory(h: string[]) {
+function saveList(key: string, list: SearchResult[]) {
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, HISTORY_MAX)));
+    localStorage.setItem(key, JSON.stringify(list));
   } catch {
     /* ignore */
   }
 }
 
-/**
- * Global command palette (Cmd/Ctrl + K).
- * Includes quick commands + debounced search across clients & services.
- */
+/* -------------------------------------------------------------------------- */
+/*  Highlight                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function Highlight({ text, term }: { text: string; term: string }) {
+  if (!term) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(term.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="rounded bg-primary/20 px-0.5 text-foreground">
+        {text.slice(idx, idx + term.length)}
+      </mark>
+      {text.slice(idx + term.length)}
+    </>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Quick actions                                                              */
+/* -------------------------------------------------------------------------- */
+
+interface QuickAction {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  hint?: string;
+  /** keywords used to surface this action when typing */
+  keywords: string[];
+  run: () => void;
+  show?: () => boolean;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Component                                                                  */
+/* -------------------------------------------------------------------------- */
+
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<string[]>(() => loadHistory());
+
+  const [recents, setRecents] = useState<SearchResult[]>(() => loadList(RECENT_KEY));
+  const [favorites, setFavorites] = useState<SearchResult[]>(() => loadList(FAVORITE_KEY));
+
   const navigate = useNavigate();
   const { user, signOut, theme, setTheme } = useAuth();
   const { can } = usePermissions();
 
-  // Toggle on Cmd/Ctrl + K
+  /* ---------------- Open/close ---------------- */
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -78,11 +132,15 @@ export function CommandPalette() {
         setOpen((o) => !o);
       }
     };
+    const onOpen = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("command-palette:open", onOpen as EventListener);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("command-palette:open", onOpen as EventListener);
+    };
   }, []);
 
-  // Reset on close
   useEffect(() => {
     if (!open) {
       setQuery("");
@@ -91,186 +149,446 @@ export function CommandPalette() {
     }
   }, [open]);
 
-  // Debounce input (300ms)
+  /* ---------------- Debounce ---------------- */
+
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(query.trim()), 300);
+    const t = setTimeout(() => setDebounced(query.trim()), 280);
     return () => clearTimeout(t);
   }, [query]);
 
-  // Run search
+  /* ---------------- Search ---------------- */
+
   useEffect(() => {
     if (!user || debounced.length < 2) {
       setResults([]);
+      setLoading(false);
       return;
     }
     let cancelled = false;
     setLoading(true);
+    const term = `%${debounced}%`;
     (async () => {
-      const term = `%${debounced}%`;
-      const [{ data: clients }, { data: services }] = await Promise.all([
+      const [clientsRes, servicesRes, filesRes] = await Promise.all([
         supabase
           .from("clients")
-          .select("id, name, email")
+          .select("id, name, email, cpf_cnpj")
           .or(`name.ilike.${term},email.ilike.${term},cpf_cnpj.ilike.${term}`)
-          .limit(5),
+          .limit(6),
         supabase
           .from("services")
-          .select("id, subject, type")
+          .select("id, subject, type, client:clients(name)")
           .ilike("subject", term)
-          .limit(5),
+          .limit(6),
+        supabase
+          .from("drive_files")
+          .select("id, file_name, service_id, client_id")
+          .ilike("file_name", term)
+          .limit(6),
       ]);
       if (cancelled) return;
+
       const out: SearchResult[] = [
-        ...(clients ?? []).map((c) => ({
+        ...(clientsRes.data ?? []).map((c) => ({
           id: c.id,
-          label: c.name,
-          hint: c.email ?? undefined,
+          key: `client:${c.id}`,
           group: "Clientes" as const,
-          to: "/crm",
+          label: c.name,
+          hint: c.email ?? c.cpf_cnpj ?? undefined,
+          to: `/crm?client=${c.id}`,
         })),
-        ...(services ?? []).map((s) => ({
+        ...((servicesRes.data ?? []) as Array<{
+          id: string;
+          subject: string;
+          type: keyof typeof SERVICE_TYPE_LABEL;
+          client: { name: string } | null;
+        }>).map((s) => ({
           id: s.id,
-          label: s.subject,
-          hint: s.type,
+          key: `service:${s.id}`,
           group: "Serviços" as const,
-          to: "/servicos",
+          label: s.subject,
+          hint: [SERVICE_TYPE_LABEL[s.type], s.client?.name].filter(Boolean).join(" • "),
+          to: `/servicos?service=${s.id}`,
+        })),
+        ...(filesRes.data ?? []).map((f) => ({
+          id: f.id,
+          key: `file:${f.id}`,
+          group: "Documentos" as const,
+          label: f.file_name,
+          hint: f.service_id ? "Vinculado a um serviço" : f.client_id ? "Vinculado a um cliente" : "Documento",
+          to: f.service_id ? `/servicos?service=${f.service_id}` : "/servicos",
         })),
       ];
       setResults(out);
       setLoading(false);
-      // Push successful search into history
-      setHistory((prev) => {
-        const next = [debounced, ...prev.filter((q) => q !== debounced)].slice(0, HISTORY_MAX);
-        saveHistory(next);
-        return next;
-      });
     })();
     return () => {
       cancelled = true;
     };
   }, [debounced, user]);
 
+  /* ---------------- Helpers ---------------- */
+
   const grouped = useMemo(() => {
-    const g: Record<string, SearchResult[]> = {};
-    results.forEach((r) => {
-      (g[r.group] ||= []).push(r);
-    });
+    const g: Record<ResultGroup, SearchResult[]> = {
+      Clientes: [],
+      Serviços: [],
+      Documentos: [],
+    };
+    results.forEach((r) => g[r.group].push(r));
     return g;
   }, [results]);
 
-  const clearHistory = () => {
-    setHistory([]);
-    saveHistory([]);
-  };
+  const pushRecent = useCallback((item: SearchResult) => {
+    setRecents((prev) => {
+      const next = [item, ...prev.filter((r) => r.key !== item.key)].slice(0, MAX_RECENT);
+      saveList(RECENT_KEY, next);
+      return next;
+    });
+  }, []);
 
-  const go = (path: string) => {
-    setOpen(false);
-    navigate(path);
-  };
+  const isFavorite = useCallback(
+    (key: string) => favorites.some((f) => f.key === key),
+    [favorites],
+  );
+  const toggleFavorite = useCallback((item: SearchResult) => {
+    setFavorites((prev) => {
+      const exists = prev.some((f) => f.key === item.key);
+      const next = exists ? prev.filter((f) => f.key !== item.key) : [item, ...prev].slice(0, 12);
+      saveList(FAVORITE_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const go = useCallback(
+    (item: SearchResult) => {
+      pushRecent(item);
+      setOpen(false);
+      navigate(item.to);
+    },
+    [navigate, pushRecent],
+  );
+
+  const goPath = useCallback(
+    (path: string) => {
+      setOpen(false);
+      navigate(path);
+    },
+    [navigate],
+  );
+
+  /* ---------------- Quick actions ---------------- */
+
+  const quickActions = useMemo<QuickAction[]>(
+    () => [
+      {
+        id: "new-service",
+        label: "Novo serviço",
+        icon: Plus,
+        hint: "Abrir formulário de novo processo",
+        keywords: ["novo", "criar", "adicionar", "serviço", "processo", "new"],
+        run: () => goPath("/servicos?new=1"),
+      },
+      {
+        id: "new-client",
+        label: "Cadastrar cliente",
+        icon: Plus,
+        hint: "Abrir formulário de novo cliente",
+        keywords: ["novo", "criar", "adicionar", "cliente", "cadastrar", "new"],
+        run: () => goPath("/crm?new=1"),
+      },
+      {
+        id: "new-finance",
+        label: "Novo lançamento financeiro",
+        icon: Plus,
+        hint: "Receita ou despesa",
+        keywords: ["novo", "criar", "lançamento", "financeiro", "receita", "despesa"],
+        show: () => can("access_financial"),
+        run: () => goPath("/financeiro?new=1"),
+      },
+      {
+        id: "open-last-service",
+        label: "Abrir último serviço acessado",
+        icon: ArrowRight,
+        hint: recents.find((r) => r.group === "Serviços")?.label,
+        keywords: ["abrir", "último", "ultimo", "serviço", "recente"],
+        show: () => recents.some((r) => r.group === "Serviços"),
+        run: () => {
+          const last = recents.find((r) => r.group === "Serviços");
+          if (last) go(last);
+        },
+      },
+      {
+        id: "go-dashboard",
+        label: "Ir para Dashboard",
+        icon: Home,
+        keywords: ["ir", "dashboard", "início", "home"],
+        run: () => goPath("/"),
+      },
+      {
+        id: "go-crm",
+        label: "Ir para CRM",
+        icon: Users,
+        keywords: ["ir", "crm", "clientes"],
+        run: () => goPath("/crm"),
+      },
+      {
+        id: "go-services",
+        label: "Ir para Serviços",
+        icon: Briefcase,
+        keywords: ["ir", "serviços", "processos"],
+        run: () => goPath("/servicos"),
+      },
+      {
+        id: "go-finance",
+        label: "Ir para Financeiro",
+        icon: Wallet,
+        keywords: ["ir", "financeiro", "caixa"],
+        show: () => can("access_financial"),
+        run: () => goPath("/financeiro"),
+      },
+      {
+        id: "go-settings",
+        label: "Ir para Configurações",
+        icon: Settings,
+        keywords: ["ir", "configurações", "settings", "preferências"],
+        run: () => goPath("/configuracoes"),
+      },
+      {
+        id: "toggle-theme",
+        label: theme === "dark" ? "Mudar para tema claro" : "Mudar para tema escuro",
+        icon: theme === "dark" ? Sun : Moon,
+        keywords: ["tema", "theme", "dark", "claro", "escuro", "alternar"],
+        run: () => {
+          setTheme(theme === "dark" ? "light" : "dark");
+          setOpen(false);
+        },
+      },
+      {
+        id: "logout",
+        label: "Sair da conta",
+        icon: LogOut,
+        keywords: ["sair", "logout", "desconectar"],
+        run: () => {
+          setOpen(false);
+          signOut();
+        },
+      },
+    ],
+    [recents, theme, can, go, goPath, signOut, setTheme],
+  );
+
+  const visibleActions = quickActions.filter((a) => (a.show ? a.show() : true));
+
+  // Highlight quick actions when the query matches one of their keywords.
+  const matchedActions = useMemo(() => {
+    const q = debounced.toLowerCase();
+    if (q.length < 2) return [];
+    return visibleActions.filter((a) =>
+      a.keywords.some((k) => k.includes(q) || q.includes(k)),
+    );
+  }, [debounced, visibleActions]);
+
+  /* ---------------- Render ---------------- */
+
+  const showEmptyState = query.length === 0;
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput
-        placeholder="Buscar clientes, serviços ou comandos..."
-        value={query}
-        onValueChange={setQuery}
-      />
-      <CommandList>
-        <CommandEmpty>
-          {loading ? "Buscando..." : debounced.length >= 2 ? "Nenhum resultado." : "Digite para buscar."}
-        </CommandEmpty>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent
+        className="top-[15%] max-w-2xl translate-y-0 overflow-hidden p-0 shadow-2xl sm:rounded-xl"
+      >
+        <Command shouldFilter={false} className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground">
+          <CommandInput
+            placeholder="Buscar clientes, serviços, documentos ou comandos…"
+            value={query}
+            onValueChange={setQuery}
+            className="h-14 text-base"
+          />
+          <CommandList className="max-h-[460px]">
+            <CommandEmpty>
+              {loading
+                ? "Buscando…"
+                : debounced.length >= 2
+                  ? "Nenhum resultado encontrado."
+                  : "Digite ao menos 2 caracteres."}
+            </CommandEmpty>
 
-        {history.length > 0 && query.length === 0 && (
-          <>
-            <CommandGroup heading="Buscas recentes">
-              {history.map((h) => (
-                <CommandItem key={h} value={`recent-${h}`} onSelect={() => setQuery(h)}>
-                  <Clock className="mr-2 h-4 w-4 opacity-60" />
-                  <span className="flex-1 truncate">{h}</span>
-                </CommandItem>
-              ))}
-              <CommandItem
-                value="__clear-history"
-                onSelect={clearHistory}
-                className="text-muted-foreground"
-              >
-                <X className="mr-2 h-4 w-4" /> Limpar histórico
-              </CommandItem>
-            </CommandGroup>
-            <CommandSeparator />
-          </>
-        )}
-
-        <CommandGroup heading="Comandos rápidos">
-          <CommandItem onSelect={() => go("/")}>
-            <Home className="mr-2 h-4 w-4" /> Ir para Dashboard
-          </CommandItem>
-          <CommandItem onSelect={() => go("/crm")}>
-            <Users className="mr-2 h-4 w-4" /> Ir para CRM
-          </CommandItem>
-          <CommandItem onSelect={() => go("/servicos")}>
-            <Briefcase className="mr-2 h-4 w-4" /> Ir para Serviços
-          </CommandItem>
-          {can("access_financial") && (
-            <CommandItem onSelect={() => go("/financeiro")}>
-              <Wallet className="mr-2 h-4 w-4" /> Ir para Financeiro
-            </CommandItem>
-          )}
-          <CommandItem onSelect={() => go("/configuracoes")}>
-            <Settings className="mr-2 h-4 w-4" /> Configurações
-          </CommandItem>
-        </CommandGroup>
-
-        <CommandSeparator />
-
-        <CommandGroup heading="Ações">
-          <CommandItem onSelect={() => go("/crm?new=1")}>
-            <Plus className="mr-2 h-4 w-4" /> Novo cliente
-          </CommandItem>
-          <CommandItem onSelect={() => go("/servicos?new=1")}>
-            <Plus className="mr-2 h-4 w-4" /> Novo serviço
-          </CommandItem>
-          {can("access_financial") && (
-            <CommandItem onSelect={() => go("/financeiro?new=1")}>
-              <Plus className="mr-2 h-4 w-4" /> Novo lançamento
-            </CommandItem>
-          )}
-          <CommandItem
-            onSelect={() => {
-              setTheme(theme === "dark" ? "light" : "dark");
-              setOpen(false);
-            }}
-          >
-            {theme === "dark" ? (
-              <Sun className="mr-2 h-4 w-4" />
-            ) : (
-              <Moon className="mr-2 h-4 w-4" />
+            {/* Suggested quick actions when typing matching keywords */}
+            {matchedActions.length > 0 && (
+              <>
+                <CommandGroup heading="Ações sugeridas">
+                  {matchedActions.map((a) => (
+                    <ActionItem key={a.id} action={a} term={debounced} />
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
             )}
-            Alternar tema
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              setOpen(false);
-              signOut();
-            }}
-          >
-            <LogOut className="mr-2 h-4 w-4" /> Sair
-          </CommandItem>
-        </CommandGroup>
 
-        {Object.entries(grouped).map(([group, items]) => (
-          <CommandGroup key={group} heading={`${group} (${items.length})`}>
-            {items.map((r) => (
-              <CommandItem key={r.id} onSelect={() => go(r.to)}>
-                <span className="flex-1 truncate">{r.label}</span>
-                {r.hint && (
-                  <span className="ml-2 truncate text-xs text-muted-foreground">{r.hint}</span>
-                )}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ))}
-      </CommandList>
-    </CommandDialog>
+            {/* Search results */}
+            {(["Clientes", "Serviços", "Documentos"] as const).map((g) => {
+              const items = grouped[g];
+              if (items.length === 0) return null;
+              return (
+                <CommandGroup key={g} heading={`${g} (${items.length})`}>
+                  {items.map((item) => (
+                    <ResultRow
+                      key={item.key}
+                      item={item}
+                      term={debounced}
+                      favorited={isFavorite(item.key)}
+                      onSelect={() => go(item)}
+                      onToggleFavorite={() => toggleFavorite(item)}
+                    />
+                  ))}
+                </CommandGroup>
+              );
+            })}
+
+            {/* Empty-state surfaces: favorites + recents */}
+            {showEmptyState && favorites.length > 0 && (
+              <CommandGroup heading="Favoritos">
+                {favorites.map((item) => (
+                  <ResultRow
+                    key={`fav-${item.key}`}
+                    item={item}
+                    term=""
+                    favorited
+                    onSelect={() => go(item)}
+                    onToggleFavorite={() => toggleFavorite(item)}
+                  />
+                ))}
+              </CommandGroup>
+            )}
+
+            {showEmptyState && recents.length > 0 && (
+              <>
+                {favorites.length > 0 && <CommandSeparator />}
+                <CommandGroup heading="Acessos recentes">
+                  {recents.map((item) => (
+                    <ResultRow
+                      key={`rec-${item.key}`}
+                      item={item}
+                      term=""
+                      favorited={isFavorite(item.key)}
+                      onSelect={() => go(item)}
+                      onToggleFavorite={() => toggleFavorite(item)}
+                      icon={Clock}
+                    />
+                  ))}
+                </CommandGroup>
+              </>
+            )}
+
+            {/* Always-available quick actions */}
+            {(showEmptyState || debounced.length < 2) && (
+              <>
+                <CommandSeparator />
+                <CommandGroup heading="Ações rápidas">
+                  {visibleActions.slice(0, 6).map((a) => (
+                    <ActionItem key={a.id} action={a} term="" />
+                  ))}
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+
+          {/* Footer hints */}
+          <div className="flex items-center justify-between border-t border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-3">
+              <span><Kbd>↑</Kbd> <Kbd>↓</Kbd> navegar</span>
+              <span><Kbd>↵</Kbd> abrir</span>
+              <span><Kbd>esc</Kbd> fechar</span>
+            </div>
+            <span className="hidden sm:inline">
+              <Kbd>{navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}</Kbd> <Kbd>K</Kbd> para abrir
+            </span>
+          </div>
+        </Command>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Subcomponents                                                              */
+/* -------------------------------------------------------------------------- */
+
+const GROUP_ICON: Record<ResultGroup, React.ComponentType<{ className?: string }>> = {
+  Clientes: User,
+  Serviços: Briefcase,
+  Documentos: FileText,
+};
+
+function ResultRow({
+  item,
+  term,
+  favorited,
+  onSelect,
+  onToggleFavorite,
+  icon,
+}: {
+  item: SearchResult;
+  term: string;
+  favorited: boolean;
+  onSelect: () => void;
+  onToggleFavorite: () => void;
+  icon?: React.ComponentType<{ className?: string }>;
+}) {
+  const Icon = icon ?? GROUP_ICON[item.group];
+  return (
+    <CommandItem value={item.key} onSelect={onSelect} className="group gap-3">
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium">
+          <Highlight text={item.label} term={term} />
+        </div>
+        {item.hint && (
+          <div className="truncate text-xs text-muted-foreground">
+            <Highlight text={item.hint} term={term} />
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite();
+        }}
+        className={cn(
+          "rounded p-1 opacity-0 transition group-hover:opacity-100 hover:bg-accent",
+          favorited && "opacity-100 text-amber-500",
+        )}
+        aria-label={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+        title={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      >
+        {favorited ? <Star className="h-4 w-4 fill-current" /> : <StarOff className="h-4 w-4" />}
+      </button>
+    </CommandItem>
+  );
+}
+
+function ActionItem({ action, term }: { action: QuickAction; term: string }) {
+  const Icon = action.icon;
+  return (
+    <CommandItem value={`action-${action.id}`} onSelect={action.run} className="gap-3">
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium">
+          <Highlight text={action.label} term={term} />
+        </div>
+        {action.hint && (
+          <div className="truncate text-xs text-muted-foreground">{action.hint}</div>
+        )}
+      </div>
+    </CommandItem>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px]">
+      {children}
+    </kbd>
   );
 }
