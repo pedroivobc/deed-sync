@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Briefcase, Wallet, Settings, LogOut, Lock, Calculator,
-  ExternalLink,
+  ExternalLink, CalendarDays,
 } from "lucide-react";
 import { NavLink as RouterNavLink } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
@@ -27,6 +27,7 @@ const items: NavItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "CRM", url: "/crm", icon: Users },
   { title: "Serviços", url: "/servicos", icon: Briefcase },
+  { title: "Agenda", url: "/agenda", icon: CalendarDays },
   { title: "Financeiro", url: "/financeiro", icon: Wallet, permission: "access_financial", lockedWhenDenied: true },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
@@ -72,7 +73,7 @@ export function AppSidebar() {
             if (!allowed && item.lockedWhenDenied) {
               return (
                 <div key={item.url}>
-                {idx === 3 && <CalculoExternalLink />}
+                {idx === 4 && <CalculoExternalLink />}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
@@ -95,7 +96,7 @@ export function AppSidebar() {
 
             return (
               <div key={item.url}>
-                {idx === 3 && <CalculoExternalLink />}
+                {idx === 4 && <CalculoExternalLink />}
                 <NavLink
                   to={item.url}
                   end={item.url === "/"}

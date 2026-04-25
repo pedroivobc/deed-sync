@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, AlertCircle, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { Bell, AlertCircle, AlertTriangle, Info, CheckCircle2, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useNotifications, type AppNotification, type NotificationType } from "@/hooks/useNotifications";
+import {
+  useNotifications,
+  type AppNotification,
+  type NotificationType,
+  type NotificationCategory,
+} from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 
 const typeIcon: Record<NotificationType, typeof Bell> = {
@@ -23,9 +28,18 @@ const typeColor: Record<NotificationType, string> = {
   success: "text-success",
 };
 
+type CategoryTab = "all" | NotificationCategory;
+const TABS: { value: CategoryTab; label: string }[] = [
+  { value: "all", label: "Todas" },
+  { value: "importante", label: "Importantes" },
+  { value: "tarefa", label: "Tarefas" },
+  { value: "agenda", label: "Agenda" },
+];
+
 export function NotificationsBell() {
-  const { items, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { items, unreadCount, markAsRead, markAllAsRead, dismiss } = useNotifications();
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<CategoryTab>("all");
   const navigate = useNavigate();
 
   const handleClick = async (n: AppNotification) => {
@@ -35,6 +49,11 @@ export function NotificationsBell() {
       setOpen(false);
     }
   };
+
+  const visible = useMemo(
+    () => (tab === "all" ? items : items.filter((n) => n.category === tab)),
+    [items, tab],
+  );
 
   const badgeText = unreadCount > 9 ? "9+" : String(unreadCount);
 
@@ -67,8 +86,24 @@ export function NotificationsBell() {
             </button>
           )}
         </div>
+        <div className="flex gap-1 border-b border-border px-2 py-2">
+          {TABS.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTab(t.value)}
+              className={cn(
+                "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                tab === t.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
         <ScrollArea className="max-h-[420px]">
-          {items.length === 0 ? (
+          {visible.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
               <Bell className="mb-3 h-10 w-10 text-muted-foreground/40" />
               <p className="text-sm font-medium">Você está em dia!</p>
@@ -76,17 +111,21 @@ export function NotificationsBell() {
             </div>
           ) : (
             <ul className="divide-y divide-border">
-              {items.map((n) => {
+              {visible.map((n) => {
                 const Icon = typeIcon[n.type];
                 const unread = !n.read_at;
                 return (
-                  <li key={n.id}>
+                  <li
+                    key={n.id}
+                    className={cn(
+                      "group relative flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted",
+                      unread && "bg-accent/10",
+                    )}
+                  >
                     <button
+                      type="button"
                       onClick={() => handleClick(n)}
-                      className={cn(
-                        "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted",
-                        unread && "bg-accent/10"
-                      )}
+                      className="flex flex-1 items-start gap-3 text-left"
                     >
                       {unread && (
                         <span
@@ -109,6 +148,17 @@ export function NotificationsBell() {
                           })}
                         </p>
                       </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dismiss(n.id);
+                      }}
+                      className="mt-1 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground group-hover:opacity-100"
+                      aria-label="Descartar"
+                    >
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </li>
                 );
