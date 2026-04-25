@@ -136,63 +136,78 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
 
   return (
     <section id="section-certidoes_internet" className="rounded-xl border border-border bg-card/50 p-4">
-      <div className="mb-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-accent">Certidões de Internet</h4>
-      </div>
+      {(() => {
+        const rows = [
+          ...INTERNET_CERT_DEFAULTS.map((cfg) => ({
+            key: cfg.type as string,
+            name: cfg.label,
+            description: cfg.description,
+            url: cfg.url,
+            cert: internetCerts.find((c) => c.certificate_type === cfg.type),
+            isCustom: false,
+            cfgType: cfg.type as InternetCertificateType,
+          })),
+          ...customCerts.map((c) => ({
+            key: c.id,
+            name: c.custom_name ?? "Certidão customizada",
+            description: c.comarca ?? "Customizada",
+            url: c.issuer_url ?? null,
+            cert: c,
+            isCustom: true,
+            cfgType: "outra" as InternetCertificateType,
+          })),
+        ];
+        const totalIssued = rows.filter((r) => r.cert?.status === "emitida").length;
+        const totalSlots = rows.length;
 
-      <div className="mb-4 flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>Certidões em nome da parte VENDEDORA. Todas possuem validade de 30 dias corridos a partir do pedido.</span>
-      </div>
+        return (
+          <>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-accent">Certidões de Internet</h4>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">{totalIssued}</span> de{" "}
+                  <span className="font-semibold text-foreground">{totalSlots}</span> certidões emitidas
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => openNew("outra")}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Adicionar customizada
+              </Button>
+            </div>
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {INTERNET_CERT_DEFAULTS.map((cfg) => {
-          const cert = internetCerts.find((c) => c.certificate_type === cfg.type);
-          return (
-            <InternetCertCard
-              key={cfg.type}
-              cfg={cfg}
-              cert={cert}
-              onCreate={() => openNew(cfg.type)}
-              onEdit={() => cert && openEdit(cert)}
-              onRenew={() => cert && onRenew(cert)}
-              onDelete={() => cert && setDeleteId(cert.id)}
-              onAttach={() => openAttach(cert ?? cfg.type)}
-              onPreview={() => cert && setPreviewFor(cert)}
-              onRemoveFile={() => cert && setRemoveFileFor(cert)}
-            />
-          );
-        })}
-      </div>
+            <div className="mb-3 flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>Certidões em nome da parte VENDEDORA. Todas possuem validade de 30 dias corridos a partir do pedido.</span>
+            </div>
 
-      {customCerts.length > 0 && (
-        <div className="mt-4 space-y-2">
-          <h5 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customizadas</h5>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {customCerts.map((c) => (
-              <CustomCertCard
-                key={c.id}
-                cert={c}
-                onEdit={() => openEdit(c)}
-                onRenew={() => onRenew(c)}
-                onDelete={() => setDeleteId(c.id)}
-                onAttach={() => openAttach(c)}
-                onPreview={() => setPreviewFor(c)}
-                onRemoveFile={() => setRemoveFileFor(c)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+            <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+              <ul className="divide-y divide-border">
+                {rows.map((r) => (
+                  <CertRow
+                    key={r.key}
+                    name={r.name}
+                    description={r.description}
+                    url={r.url}
+                    cert={r.cert}
+                    isCustom={r.isCustom}
+                    onCreate={() => openNew(r.cfgType)}
+                    onEdit={() => r.cert && openEdit(r.cert)}
+                    onRenew={() => r.cert && onRenew(r.cert)}
+                    onDelete={() => r.cert && setDeleteId(r.cert.id)}
+                    onAttach={() => openAttach(r.cert ?? r.cfgType)}
+                    onPreview={() => r.cert && setPreviewFor(r.cert)}
+                    onRemoveFile={() => r.cert && setRemoveFileFor(r.cert)}
+                  />
+                ))}
+              </ul>
+            </div>
 
-      <div className="mt-4">
-        <Button variant="outline" size="sm" onClick={() => openNew("outra")}>
-          <Plus className="mr-1.5 h-3.5 w-3.5" /> Adicionar certidão customizada
-        </Button>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
-          Use para vendedores que residem em outra comarca/estado (ex: TJSP, TRF3).
-        </p>
-      </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Use "Adicionar customizada" para vendedores em outra comarca/estado (ex: TJSP, TRF3).
+            </p>
+          </>
+        );
+      })()}
 
       <InternetCertDialog
         open={dialogOpen}
