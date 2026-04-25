@@ -133,7 +133,7 @@ export function BulkActionBar({ selectedIds, users, canDelete, onClear, onChange
         description="Esta ação não pode ser desfeita. Todos os dados relacionados serão removidos."
         confirmText="Sim, excluir tudo"
         loadingText="Excluindo..."
-        onConfirm={handleDelete}
+        onConfirm={async () => { await handleDelete(); }}
       />
     </>
   );
