@@ -58,6 +58,95 @@ export type Database = {
           },
         ]
       }
+      calendar_events: {
+        Row: {
+          all_day: boolean
+          client_id: string | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          event_type: Database["public"]["Enums"]["calendar_event_type"]
+          id: string
+          location: string | null
+          owner_id: string | null
+          service_id: string | null
+          source: Database["public"]["Enums"]["calendar_event_source"]
+          source_ref: string | null
+          start_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          client_id?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
+          id?: string
+          location?: string | null
+          owner_id?: string | null
+          service_id?: string | null
+          source?: Database["public"]["Enums"]["calendar_event_source"]
+          source_ref?: string | null
+          start_at: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          client_id?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
+          id?: string
+          location?: string | null
+          owner_id?: string | null
+          service_id?: string | null
+          source?: Database["public"]["Enums"]["calendar_event_source"]
+          source_ref?: string | null
+          start_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clicksign_envelopes: {
         Row: {
           cancelled_at: string | null
@@ -779,8 +868,10 @@ export type Database = {
       }
       notifications: {
         Row: {
+          category: string
           created_at: string
           description: string | null
+          dismissed_at: string | null
           id: string
           link: string | null
           read_at: string | null
@@ -791,8 +882,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string
           created_at?: string
           description?: string | null
+          dismissed_at?: string | null
           id?: string
           link?: string | null
           read_at?: string | null
@@ -803,8 +896,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string
           created_at?: string
           description?: string | null
+          dismissed_at?: string | null
           id?: string
           link?: string | null
           read_at?: string | null
@@ -1625,6 +1720,15 @@ export type Database = {
     Enums: {
       app_role: "administrador" | "gerente" | "colaborador"
       audit_action: "create" | "update" | "delete" | "login" | "logout"
+      calendar_event_source: "manual" | "auto"
+      calendar_event_type:
+        | "vencimento_certidao"
+        | "assinatura_prevista"
+        | "assinatura_realizada"
+        | "atendimento_cliente"
+        | "prazo_servico"
+        | "reuniao"
+        | "outro"
       civil_certificate_status:
         | "pendente"
         | "solicitada"
@@ -1907,6 +2011,16 @@ export const Constants = {
     Enums: {
       app_role: ["administrador", "gerente", "colaborador"],
       audit_action: ["create", "update", "delete", "login", "logout"],
+      calendar_event_source: ["manual", "auto"],
+      calendar_event_type: [
+        "vencimento_certidao",
+        "assinatura_prevista",
+        "assinatura_realizada",
+        "atendimento_cliente",
+        "prazo_servico",
+        "reuniao",
+        "outro",
+      ],
       civil_certificate_status: [
         "pendente",
         "solicitada",

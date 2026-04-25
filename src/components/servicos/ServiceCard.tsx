@@ -5,6 +5,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getInitials } from "@/lib/clientUi";
 import {
@@ -31,12 +32,25 @@ interface Props {
   onOpen: (id: string) => void;
   draggable?: boolean;
   alerts?: ServiceAlerts;
+  selected?: boolean;
+  hasSelection?: boolean;
+  onToggleSelect?: (id: string, e?: React.MouseEvent) => void;
+  onClickWithModifiers?: (e: React.MouseEvent, id: string) => boolean;
 }
 
-function ServiceCardImpl({ service, onOpen, draggable = true, alerts }: Props) {
+function ServiceCardImpl({
+  service,
+  onOpen,
+  draggable = true,
+  alerts,
+  selected = false,
+  hasSelection = false,
+  onToggleSelect,
+  onClickWithModifiers,
+}: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: service.id,
-    disabled: !draggable,
+    disabled: !draggable || hasSelection,
     data: { service },
   });
 
@@ -53,19 +67,44 @@ function ServiceCardImpl({ service, onOpen, draggable = true, alerts }: Props) {
       style={style}
       {...attributes}
       {...listeners}
-      onClick={() => {
+      onClick={(e) => {
         if (isDragging) return;
+        // Let parent intercept shift/ctrl/meta to do range/toggle selection
+        if (onClickWithModifiers && onClickWithModifiers(e, service.id)) return;
+        // If there is an active selection, plain click toggles instead of opening
+        if (hasSelection && onToggleSelect) {
+          onToggleSelect(service.id, e);
+          return;
+        }
         onOpen(service.id);
       }}
       className={cn(
         "group cursor-pointer rounded-lg border border-border bg-card p-3 shadow-soft transition hover:shadow-card",
-        isDragging && "opacity-60 shadow-card"
+        isDragging && "opacity-60 shadow-card",
+        selected && "ring-2 ring-primary border-primary/40"
       )}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <Badge className={cn("rounded-md text-[10px] font-semibold uppercase", SERVICE_TYPE_BADGE[service.type])}>
-          {SERVICE_TYPE_LABEL[service.type]}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {onToggleSelect && (
+            <span
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSelect(service.id, e);
+              }}
+              className={cn(
+                "transition-opacity",
+                hasSelection || selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )}
+            >
+              <Checkbox checked={selected} aria-label="Selecionar serviço" />
+            </span>
+          )}
+          <Badge className={cn("rounded-md text-[10px] font-semibold uppercase", SERVICE_TYPE_BADGE[service.type])}>
+            {SERVICE_TYPE_LABEL[service.type]}
+          </Badge>
+        </div>
         <div className="flex items-center gap-1">
           {showAlerts && (
             <TooltipProvider delayDuration={200}>
@@ -162,6 +201,10 @@ export const ServiceCard = memo(ServiceCardImpl, (prev, next) => {
     prev.service.pasta_fisica === next.service.pasta_fisica &&
     prev.service.client_name === next.service.client_name &&
     prev.service.assigned_name === next.service.assigned_name &&
+    prev.selected === next.selected &&
+    prev.hasSelection === next.hasSelection &&
+    prev.onToggleSelect === next.onToggleSelect &&
+    prev.onClickWithModifiers === next.onClickWithModifiers &&
     prev.alerts?.hasExpired === next.alerts?.hasExpired &&
     prev.alerts?.expiringSoon === next.alerts?.expiringSoon &&
     prev.alerts?.complete === next.alerts?.complete &&
