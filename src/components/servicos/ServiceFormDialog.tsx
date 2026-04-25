@@ -34,7 +34,6 @@ import { RegularizacaoForm } from "./forms/RegularizacaoForm";
 import { ProgressPanel } from "./ProgressPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { CompleteConfirmDialog } from "./CompleteConfirmDialog";
-import { DriveFolderButton } from "@/components/DriveFolderButton";
 import { callDrive } from "@/lib/drive";
 import { MoneyInput } from "@/components/servicos/MoneyInput";
 import type { Database, Json } from "@/integrations/supabase/types";
@@ -333,25 +332,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {isEdit && service && type && (
-                <DriveFolderButton
-                  entityType="service"
-                  entityId={service.id}
-                  serviceType={type}
-                  clientName={client?.name ?? null}
-                  subject={subject}
-                  matricula={
-                    type === "escritura"
-                      ? ((customFields as EscrituraFields)?.imovel?.numero_matricula as string | undefined) ?? null
-                      : null
-                  }
-                />
-              )}
-              <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Body */}
