@@ -16,6 +16,34 @@ function baseUrl(env: string) {
     : "https://matls-clients.api.stage.cora.com.br";
 }
 
+function pemFromBase64Body(body: string, label: "CERTIFICATE" | "PRIVATE KEY") {
+  const compact = body.replace(/\s/g, "");
+  const lines = compact.match(/.{1,64}/g)?.join("\n") ?? compact;
+  return `-----BEGIN ${label}-----\n${lines}\n-----END ${label}-----`;
+}
+
+function extractPemFieldFromJson(raw: string, expectedBlock: "CERTIFICATE" | "PRIVATE KEY") {
+  if (!raw.trim().startsWith("{")) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const keys = expectedBlock === "CERTIFICATE"
+      ? ["certificate", "cert", "client_certificate", "CORA_CERTIFICATE"]
+      : ["private_key", "key", "client_key", "CORA_PRIVATE_KEY"];
+
+    for (const key of keys) {
+      const value = parsed[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 /**
  * Normaliza conteúdo PEM vindo de secret. Além do caso simples de "\\n",
  * também cobre valores colados como JSON string, escapes duplicados, PEM com
@@ -25,6 +53,7 @@ function normalizePem(raw: string | undefined | null, expectedBlock: "CERTIFICAT
   if (!raw) return undefined;
 
   let s = raw.trim();
+  s = extractPemFieldFromJson(s, expectedBlock) ?? s;
 
   for (let i = 0; i < 4; i++) {
     if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
@@ -48,6 +77,7 @@ function normalizePem(raw: string | undefined | null, expectedBlock: "CERTIFICAT
       .replace(/\r/g, "\n")
       .replace(/\\\s*\n/g, "\n")
       .trim();
+    s = extractPemFieldFromJson(s, expectedBlock) ?? s;
     if (s === before) break;
   }
 
@@ -59,7 +89,9 @@ function normalizePem(raw: string | undefined | null, expectedBlock: "CERTIFICAT
         if (decoded.includes("-----BEGIN")) {
           s = decoded;
         } else if (expectedBlock === "CERTIFICATE") {
-          s = `-----BEGIN CERTIFICATE-----\n${compact.match(/.{1,64}/g)?.join("\n")}\n-----END CERTIFICATE-----`;
+          s = pemFromBase64Body(compact, "CERTIFICATE");
+        } else {
+          s = pemFromBase64Body(compact, "PRIVATE KEY");
         }
       } catch {
         // mantém o valor original para validação abaixo
