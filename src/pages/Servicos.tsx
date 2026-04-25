@@ -10,7 +10,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  CalendarIcon, LayoutGrid, List as ListIcon, Plus, Search, Trash2, Upload,
+  CalendarIcon, CheckSquare, LayoutGrid, List as ListIcon, Plus, Search, Trash2, Upload,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -429,13 +429,38 @@ export default function Servicos() {
           </div>
         </div>
 
-        <BulkActionBar
+          <BulkActionBar
           selectedIds={selection.selectedIds}
           users={users}
           canDelete={services.some((s) => selection.isSelected(s.id) && canDeleteService(s.created_by))}
           onClear={selection.clear}
           onChanged={loadServices}
         />
+
+        {/* Selection helper bar (visible whenever there are filtered results) */}
+        {!loading && filtered.length > 0 && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 px-2 text-xs"
+              onClick={() => {
+                const allSelected = filtered.every((s) => selection.isSelected(s.id));
+                if (allSelected) selection.clear();
+                else selection.selectAll();
+              }}
+            >
+              <CheckSquare className="h-3.5 w-3.5" />
+              {filtered.every((s) => selection.isSelected(s.id))
+                ? "Limpar seleção"
+                : `Selecionar todos (${filtered.length})`}
+            </Button>
+            <span className="hidden sm:inline">
+              Dica: clique no checkbox · <kbd className="rounded border border-border bg-muted px-1">Shift</kbd>+clique para intervalo · <kbd className="rounded border border-border bg-muted px-1">Ctrl/Cmd</kbd>+clique para alternar · <kbd className="rounded border border-border bg-muted px-1">Shift</kbd>+<kbd className="rounded border border-border bg-muted px-1">↑/↓</kbd> para estender · <kbd className="rounded border border-border bg-muted px-1">Esc</kbd> limpa
+            </span>
+          </div>
+        )}
 
         {/* Content */}
         {loading ? (
