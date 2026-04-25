@@ -104,7 +104,7 @@ async function logServiceActivity(
 }
 
 async function handleSignerSigned(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   envelope: any,
   payload: any,
 ) {
@@ -118,7 +118,7 @@ async function handleSignerSigned(
 }
 
 async function handleEnvelopeClosed(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   envelope: any,
 ) {
   await supabase
@@ -148,7 +148,7 @@ async function handleEnvelopeClosed(
 }
 
 async function handleEnvelopeRefused(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   envelope: any,
 ) {
   await supabase.from("clicksign_envelopes").update({ status: "refused" }).eq("id", envelope.id);
@@ -162,7 +162,7 @@ async function handleEnvelopeRefused(
 }
 
 async function handleEnvelopeCancelled(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   envelope: any,
 ) {
   await supabase
@@ -172,7 +172,7 @@ async function handleEnvelopeCancelled(
 }
 
 async function handleEnvelopeExpired(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   envelope: any,
 ) {
   await supabase.from("clicksign_envelopes").update({ status: "expired" }).eq("id", envelope.id);
