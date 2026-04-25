@@ -17,21 +17,86 @@ function baseUrl(env: string) {
 }
 
 /**
- * Normaliza conteúdo PEM vindo de secret:
- * - converte "\n" literais em quebras reais
- * - normaliza CRLF -> LF
- * - remove aspas externas
- * - garante newline final
+ * Normaliza conteúdo PEM vindo de secret. Além do caso simples de "\\n",
+ * também cobre valores colados como JSON string, escapes duplicados, PEM com
+ * metadados ao redor e certificado em base64 sem cabeçalho.
  */
-function normalizePem(raw: string | undefined | null): string | undefined {
+function normalizePem(raw: string | undefined | null, expectedBlock: "CERTIFICATE" | "PRIVATE KEY"): string | undefined {
   if (!raw) return undefined;
+
   let s = raw.trim();
-  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-    s = s.slice(1, -1);
+
+  for (let i = 0; i < 4; i++) {
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      const quoted = s;
+      try {
+        const parsed = JSON.parse(quoted);
+        if (typeof parsed === "string") s = parsed.trim();
+      } catch {
+        s = quoted.slice(1, -1).trim();
+      }
+    }
+
+    const before = s;
+    s = s
+      .replace(/\\\\r\\\\n/g, "\n")
+      .replace(/\\\\n/g, "\n")
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\n")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/\\\s*\n/g, "\n")
+      .trim();
+    if (s === before) break;
   }
-  s = s.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
+
+  if (!s.includes("-----BEGIN")) {
+    const compact = s.replace(/\s/g, "");
+    if (/^[A-Za-z0-9+/=]+$/.test(compact) && compact.length > 80) {
+      try {
+        const decoded = atob(compact);
+        if (decoded.includes("-----BEGIN")) {
+          s = decoded;
+        } else if (expectedBlock === "CERTIFICATE") {
+          s = `-----BEGIN CERTIFICATE-----\n${compact.match(/.{1,64}/g)?.join("\n")}\n-----END CERTIFICATE-----`;
+        }
+      } catch {
+        // mantém o valor original para validação abaixo
+      }
+    }
+  }
+
+  const blocks = s.match(/-----BEGIN [A-Z0-9 ]+-----[\s\S]*?-----END [A-Z0-9 ]+-----/g);
+  if (blocks?.length) {
+    const matching = blocks.filter((block) =>
+      expectedBlock === "CERTIFICATE"
+        ? /-----BEGIN CERTIFICATE-----/.test(block)
+        : /-----BEGIN (?:RSA |EC |ENCRYPTED )?PRIVATE KEY-----/.test(block),
+    );
+    if (matching.length) s = matching.join("\n");
+  }
+
+  s = s
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n");
+
   if (!s.endsWith("\n")) s += "\n";
   return s;
+}
+
+function validatePem(pem: string | undefined, expectedBlock: "CERTIFICATE" | "PRIVATE KEY", secretName: string): string | null {
+  if (!pem) return `Secret ausente: ${secretName}.`;
+  const hasExpectedBlock = expectedBlock === "CERTIFICATE"
+    ? /-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----/.test(pem)
+    : /-----BEGIN (?:RSA |EC |ENCRYPTED )?PRIVATE KEY-----[\s\S]+-----END (?:RSA |EC |ENCRYPTED )?PRIVATE KEY-----/.test(pem);
+
+  if (!hasExpectedBlock) {
+    return `${secretName} não contém um bloco PEM válido (${expectedBlock}). Verifique se o conteúdo inclui BEGIN/END e quebras de linha corretas.`;
+  }
+  return null;
 }
 
 async function logCall(
@@ -69,8 +134,8 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const env = (Deno.env.get("CORA_ENVIRONMENT") ?? "stage").toLowerCase();
   const clientId = Deno.env.get("CORA_CLIENT_ID")?.trim();
-  const cert = normalizePem(Deno.env.get("CORA_CERTIFICATE"));
-  const key = normalizePem(Deno.env.get("CORA_PRIVATE_KEY"));
+  const cert = normalizePem(Deno.env.get("CORA_CERTIFICATE"), "CERTIFICATE");
+  const key = normalizePem(Deno.env.get("CORA_PRIVATE_KEY"), "PRIVATE KEY");
 
   let force = false;
   try {
@@ -80,11 +145,13 @@ Deno.serve(async (req) => {
     /* noop */
   }
 
-  if (!clientId || !cert || !key) {
+  const pemError = validatePem(cert, "CERTIFICATE", "CORA_CERTIFICATE") ?? validatePem(key, "PRIVATE KEY", "CORA_PRIVATE_KEY");
+
+  if (!clientId || pemError) {
     return new Response(
       JSON.stringify({
         ok: false,
-        error: "Secrets ausentes: verifique CORA_CLIENT_ID, CORA_CERTIFICATE e CORA_PRIVATE_KEY.",
+        error: !clientId ? "Secret ausente: CORA_CLIENT_ID." : pemError,
       }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
