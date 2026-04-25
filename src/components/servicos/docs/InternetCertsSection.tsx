@@ -10,13 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import {
-  INTERNET_CERT_DEFAULTS, INTERNET_STATUS_LABEL, computeValidity,
+  INTERNET_CERT_DEFAULTS, computeValidity,
   type ServiceParty, type InternetCertificate, type InternetCertificateType,
   type ValidityInfo,
 } from "@/lib/serviceDocs";
 import { InternetCertDialog } from "./InternetCertDialog";
 import { AttachInternetCertDialog } from "./AttachInternetCertDialog";
-import { AttachedFileBadge } from "@/components/files/AttachedFileBadge";
 import { FilePreviewDialog } from "@/components/files/FilePreviewDialog";
 import { deleteDriveFile } from "@/lib/driveFiles";
 import { notify } from "@/lib/notify";
