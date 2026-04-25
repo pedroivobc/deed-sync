@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,6 +25,12 @@ export function useNotifications() {
   const { user } = useAuth();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  // Holds the single active realtime channel for the current user.
+  // Using a ref guarantees that StrictMode double-invokes / re-renders
+  // never create more than one channel instance.
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const channelUserIdRef = useRef<string | null>(null);
+  const loadRef = useRef<() => void>(() => {});
 
   const load = useCallback(async () => {
     if (!user) {
@@ -46,29 +53,47 @@ export function useNotifications() {
     load();
   }, [load]);
 
-  // Realtime subscription
+  // Keep latest `load` accessible inside the realtime callback without
+  // re-subscribing the channel every time `load` changes.
+  useEffect(() => {
+    loadRef.current = load;
+  }, [load]);
+
+  // Realtime subscription — exactly one channel per user, created once.
   useEffect(() => {
     if (!user) return;
-    const channelName = `notifications:${user.id}`;
-    // Remove any pre-existing channel with the same name to avoid
-    // "cannot add postgres_changes callbacks ... after subscribe()" errors
-    // (happens in React StrictMode dev double-invoke or after HMR).
-    const existing = supabase.getChannels().find((c) => c.topic === `realtime:${channelName}`);
-    if (existing) {
-      supabase.removeChannel(existing);
+
+    // If a channel already exists for this exact user, do nothing.
+    if (channelRef.current && channelUserIdRef.current === user.id) {
+      return;
     }
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        () => load()
-      )
-      .subscribe();
+
+    // If a channel exists for a different user, tear it down first.
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+      channelUserIdRef.current = null;
+    }
+
+    const channel = supabase.channel(`notifications:${user.id}`);
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+      () => loadRef.current?.()
+    );
+    channel.subscribe();
+
+    channelRef.current = channel;
+    channelUserIdRef.current = user.id;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        channelUserIdRef.current = null;
+      }
     };
-  }, [user, load]);
+  }, [user]);
 
   const unreadCount = items.filter((n) => !n.read_at).length;
 
