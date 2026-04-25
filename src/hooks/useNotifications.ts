@@ -49,8 +49,16 @@ export function useNotifications() {
   // Realtime subscription
   useEffect(() => {
     if (!user) return;
+    const channelName = `notifications:${user.id}`;
+    // Remove any pre-existing channel with the same name to avoid
+    // "cannot add postgres_changes callbacks ... after subscribe()" errors
+    // (happens in React StrictMode dev double-invoke or after HMR).
+    const existing = supabase.getChannels().find((c) => c.topic === `realtime:${channelName}`);
+    if (existing) {
+      supabase.removeChannel(existing);
+    }
     const channel = supabase
-      .channel(`notifications:${user.id}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
