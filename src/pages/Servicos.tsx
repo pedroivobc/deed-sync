@@ -10,7 +10,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  CalendarIcon, LayoutGrid, List as ListIcon, Plus, Search, Trash2,
+  CalendarIcon, LayoutGrid, List as ListIcon, Plus, Search, Trash2, Upload,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -43,6 +43,7 @@ import {
 import { getInitials } from "@/lib/clientUi";
 import { KanbanColumn } from "@/components/servicos/KanbanColumn";
 import { ServiceFormDialog } from "@/components/servicos/ServiceFormDialog";
+import { ImportCsvDialog } from "@/components/servicos/ImportCsvDialog";
 import type { ServiceCardData } from "@/components/servicos/ServiceCard";
 import { useServiceAlerts } from "@/hooks/useServiceAlerts";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -78,6 +79,7 @@ export default function Servicos() {
   // Dialog
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceRow | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Delete confirm
@@ -394,9 +396,14 @@ export default function Servicos() {
               <Button variant="ghost" size="sm" onClick={clearFilters}>Limpar</Button>
             )}
 
-            <Button onClick={handleNew} className="ml-auto gap-1.5">
-              <Plus className="h-4 w-4" /> Novo serviço
-            </Button>
+            <div className="ml-auto flex gap-2">
+              <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+                <Upload className="h-4 w-4" /> Importar CSV
+              </Button>
+              <Button onClick={handleNew} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Novo serviço
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -543,6 +550,12 @@ export default function Servicos() {
         onOpenChange={setFormOpen}
         service={editing}
         onSaved={loadServices}
+      />
+
+      <ImportCsvDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={loadServices}
       />
 
       <ConfirmDialog
