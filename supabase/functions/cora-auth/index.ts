@@ -16,6 +16,24 @@ function baseUrl(env: string) {
     : "https://matls-clients.api.stage.cora.com.br";
 }
 
+/**
+ * Normaliza conteúdo PEM vindo de secret:
+ * - converte "\n" literais em quebras reais
+ * - normaliza CRLF -> LF
+ * - remove aspas externas
+ * - garante newline final
+ */
+function normalizePem(raw: string | undefined | null): string | undefined {
+  if (!raw) return undefined;
+  let s = raw.trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1);
+  }
+  s = s.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
+  if (!s.endsWith("\n")) s += "\n";
+  return s;
+}
+
 async function logCall(
   supabase: any,
   payload: {
@@ -51,8 +69,8 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const env = (Deno.env.get("CORA_ENVIRONMENT") ?? "stage").toLowerCase();
   const clientId = Deno.env.get("CORA_CLIENT_ID")?.trim();
-  const cert = Deno.env.get("CORA_CERTIFICATE");
-  const key = Deno.env.get("CORA_PRIVATE_KEY");
+  const cert = normalizePem(Deno.env.get("CORA_CERTIFICATE"));
+  const key = normalizePem(Deno.env.get("CORA_PRIVATE_KEY"));
 
   let force = false;
   try {
