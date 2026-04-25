@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -61,6 +62,7 @@ export default function CRM() {
   const [openDetails, setOpenDetails] = useState(false);
   const [confirmDel, setConfirmDel] = useState<ClientRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const load = async () => {
     setLoading(true);
@@ -79,6 +81,31 @@ export default function CRM() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Deep-link from CommandPalette: ?client=ID opens details; ?new=1 opens new form.
+  useEffect(() => {
+    const newParam = searchParams.get("new");
+    const clientParam = searchParams.get("client");
+    if (newParam === "1") {
+      setEditing(null);
+      setOpenForm(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("new");
+      setSearchParams(next, { replace: true });
+      return;
+    }
+    if (clientParam && rows.length > 0) {
+      const c = rows.find((r) => r.id === clientParam);
+      if (c) {
+        setViewing(c);
+        setOpenDetails(true);
+        const next = new URLSearchParams(searchParams);
+        next.delete("client");
+        setSearchParams(next, { replace: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, rows.length]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
