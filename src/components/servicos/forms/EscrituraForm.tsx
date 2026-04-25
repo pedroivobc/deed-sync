@@ -20,14 +20,18 @@ import { EscrituraDocs } from "../docs/EscrituraDocs";
 import { ImovelSection } from "./ImovelSection";
 import { type EscrituraFields, TIPO_ESCRITURA_OPTIONS } from "@/lib/serviceFields";
 import { usePermissions } from "@/hooks/usePermissions";
+import type { DocProgress } from "@/lib/serviceDocs";
 
 interface Props {
   value: EscrituraFields;
   onChange: (v: EscrituraFields) => void;
   serviceId: string | null;
+  /** Forwarded to EscrituraDocs so the parent layout can render the
+   *  documentation checklist in its own sticky column. */
+  onDocProgressChange?: (progress: DocProgress | null) => void;
 }
 
-export function EscrituraForm({ value, onChange, serviceId }: Props) {
+export function EscrituraForm({ value, onChange, serviceId, onDocProgressChange }: Props) {
   const { can } = usePermissions();
   const canSeeFinancial = can("view_service_financial");
   const set = <K extends keyof EscrituraFields>(section: K, partial: Partial<EscrituraFields[K]>) => {
@@ -125,6 +129,7 @@ export function EscrituraForm({ value, onChange, serviceId }: Props) {
           serviceId={serviceId}
           imovel={value.imovel}
           onImovelChange={(v) => set("imovel", v)}
+          onDocProgressChange={onDocProgressChange}
         />
 
         <div className="mt-4">

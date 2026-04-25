@@ -36,6 +36,8 @@ import { ActivityTimeline } from "./ActivityTimeline";
 import { CompleteConfirmDialog } from "./CompleteConfirmDialog";
 import { callDrive } from "@/lib/drive";
 import { MoneyInput } from "@/components/servicos/MoneyInput";
+import { DocChecklistPanel } from "./docs/DocChecklistPanel";
+import type { DocProgress } from "@/lib/serviceDocs";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
@@ -78,10 +80,14 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
   const [completeOpen, setCompleteOpen] = useState(false);
   const [pendingStageOnComplete, setPendingStageOnComplete] = useState<ServiceStage | null>(null);
   const [logRefresh, setLogRefresh] = useState(0);
+  /** Progress aggregated by EscrituraDocs — rendered in the right rail. */
+  const [docProgress, setDocProgress] = useState<DocProgress | null>(null);
 
   // Initialize on open / service change
   useEffect(() => {
     if (!open) return;
+    // Reset doc progress whenever the dialog (re)opens with a new context.
+    setDocProgress(null);
     if (service) {
       setStep(2);
       setType(service.type);
@@ -303,7 +309,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex h-[92vh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogContent className="flex h-[92vh] max-w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[92vw] xl:max-w-[1400px]">
           {/* Sticky Header */}
           <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border bg-card px-6 py-4">
             <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -342,7 +348,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
             {step === 1 ? (
               <NewServiceTypeStep onSelect={handleSelectType} />
             ) : (
-              <div className="grid gap-5 lg:grid-cols-[1fr_260px]">
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
                 <div className="min-w-0 space-y-5">
                   {/* Cliente */}
                   <FormSection title="Cliente" id="section-cliente">
@@ -468,6 +474,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                           value={customFields as EscrituraFields}
                           onChange={(v) => setCustomFields(v)}
                           serviceId={service?.id ?? null}
+                          onDocProgressChange={setDocProgress}
                         />
                       </SectionsWrapper>
                     </div>
@@ -497,14 +504,17 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                   )}
                 </div>
 
-                {/* Right column: Progress panel */}
-                <div className="space-y-4 lg:sticky lg:top-2 lg:h-fit">
+                {/* Right column: Sticky control panel — Preenchimento + Checklist */}
+                <aside className="space-y-4 lg:sticky lg:top-2 lg:max-h-[calc(92vh-9rem)] lg:overflow-y-auto lg:pr-1">
                   <ProgressPanel
                     sections={sections}
                     overall={overall}
                     onJump={jumpTo}
                   />
-                </div>
+                  {type === "escritura" && docProgress && (
+                    <DocChecklistPanel progress={docProgress} />
+                  )}
+                </aside>
               </div>
             )}
           </div>
