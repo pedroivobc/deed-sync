@@ -69,8 +69,8 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const env = (Deno.env.get("CORA_ENVIRONMENT") ?? "stage").toLowerCase();
   const clientId = Deno.env.get("CORA_CLIENT_ID")?.trim();
-  const cert = Deno.env.get("CORA_CERTIFICATE");
-  const key = Deno.env.get("CORA_PRIVATE_KEY");
+  const cert = normalizePem(Deno.env.get("CORA_CERTIFICATE"));
+  const key = normalizePem(Deno.env.get("CORA_PRIVATE_KEY"));
 
   let force = false;
   try {
