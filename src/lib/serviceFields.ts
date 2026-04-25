@@ -23,12 +23,7 @@ export interface EscrituraFields {
     docs_imovel?: boolean;
     observacoes?: string;
   };
-  imovel: {
-    inscricao_iptu?: string;
-    matricula?: string;
-    numero_matricula?: string;
-    endereco?: string;
-  };
+  imovel: ImovelFields;
   processo_contrato: {
     contrato_compra_venda?: boolean;
     tera_contrato_declarado?: "sim" | "nao" | "";
@@ -62,12 +57,7 @@ export interface AvulsoFields {
     email_solicitante?: string;
     telefone_solicitante?: string;
   };
-  imovel: {
-    inscricao_iptu?: string;
-    matricula?: string;
-    numero_matricula?: string;
-    endereco?: string;
-  };
+  imovel: ImovelFields;
   descricao_servico: {
     o_que_precisa?: string;
     documentos_disponiveis?: string;
@@ -82,12 +72,7 @@ export interface RegularizacaoFields {
     email_solicitante?: string;
     telefone_solicitante?: string;
   };
-  imovel: {
-    inscricao_iptu?: string;
-    matricula?: string;
-    numero_matricula?: string;
-    endereco?: string;
-  };
+  imovel: ImovelFields;
   situacao_pendencias: {
     situacao_atual?: string;
     pendencias?: string;
@@ -96,6 +81,31 @@ export interface RegularizacaoFields {
 }
 
 export type AnyCustomFields = EscrituraFields | AvulsoFields | RegularizacaoFields;
+
+/** Estrutura padronizada de dados do imóvel.
+ *  - matricula / oficio / comarca_estado: identificação cartorial
+ *  - endereço dividido em campos para validação e integração futura
+ *  - campos legados (endereco / numero_matricula) mantidos opcionais apenas
+ *    para retrocompatibilidade de leitura; não são mais escritos pela UI.
+ */
+export interface ImovelFields {
+  // Identificação
+  inscricao_iptu?: string;
+  matricula?: string;
+  oficio?: string;
+  comarca_estado?: string;
+  // Endereço estruturado
+  cep?: string;
+  endereco_logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  // Legado (somente leitura, não mais editado)
+  endereco?: string;
+  numero_matricula?: string;
+}
 
 export const TIPO_ESCRITURA_OPTIONS = [
   "Compra e Venda",
