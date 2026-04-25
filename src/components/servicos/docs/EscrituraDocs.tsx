@@ -5,6 +5,7 @@ import { PartiesSection } from "./PartiesSection";
 import { CivilCertsSection } from "./CivilCertsSection";
 import { InternetCertsSection } from "./InternetCertsSection";
 import { PropertyDocsSection } from "./PropertyDocsSection";
+import { SignaturesSection } from "./SignaturesSection";
 import { ClickSignSection } from "../clicksign/ClickSignSection";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Save } from "lucide-react";
@@ -61,6 +62,7 @@ export function EscrituraDocs({ serviceId, imovel, onImovelChange, onDocProgress
         registration={registration}
         onChanged={reload}
       />
+      <SignaturesSection serviceId={serviceId} parties={parties} onChanged={reload} />
       <ClickSignSection
         serviceId={serviceId}
         parties={parties}

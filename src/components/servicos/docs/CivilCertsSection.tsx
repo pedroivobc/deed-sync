@@ -27,6 +27,18 @@ export function CivilCertsSection({ serviceId, parties, civilCerts, onChanged }:
   const [editingCert, setEditingCert] = useState<CivilCertificate | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  const pfParties = parties.filter((p) => p.person_type === "PF");
+
+  const onQuickAddEstadoCivil = () => {
+    // If exactly one PF party, open dialog directly; otherwise pick the first
+    // and let the user change it inside the dialog.
+    const target = pfParties[0];
+    if (!target) return;
+    setActiveParty(target);
+    setEditingCert(null);
+    setDialogOpen(true);
+  };
+
   const onAdd = (party: ServiceParty) => {
     setActiveParty(party); setEditingCert(null); setDialogOpen(true);
   };
@@ -58,11 +70,18 @@ export function CivilCertsSection({ serviceId, parties, civilCerts, onChanged }:
 
   return (
     <section id="section-certidoes_pessoais" className="rounded-xl border border-border bg-card/50 p-4">
-      <div className="mb-4">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-accent">Certidões Pessoais</h4>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Estado Civil (PF, validade 90 dias) e Junta Comercial (PJ, validade 30 dias).
-        </p>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-accent">Certidões Pessoais</h4>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Estado Civil (PF, validade 90 dias) e Junta Comercial (PJ, validade 30 dias).
+          </p>
+        </div>
+        {pfParties.length > 0 && (
+          <Button size="sm" variant="outline" onClick={onQuickAddEstadoCivil}>
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Adicionar certidão de estado civil
+          </Button>
+        )}
       </div>
 
       {parties.length === 0 ? (
