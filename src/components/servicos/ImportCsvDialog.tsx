@@ -364,10 +364,10 @@ export function ImportCsvDialog({ open, onOpenChange, onImported }: Props) {
                 <span className="font-medium">{fileName}</span>
                 <span className="text-muted-foreground">·</span>
                 <span className="text-muted-foreground">{stats.total} linha(s)</span>
-                <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-400">
+                <Badge variant="outline" className="border-success/40 text-success">
                   <CheckCircle2 className="mr-1 h-3 w-3" /> {stats.ok} ok
                 </Badge>
-                <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-400">
+                <Badge variant="outline" className="border-warning/40 text-warning">
                   <AlertCircle className="mr-1 h-3 w-3" /> {stats.review} revisar
                 </Badge>
                 <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground">
@@ -399,12 +399,12 @@ export function ImportCsvDialog({ open, onOpenChange, onImported }: Props) {
                         </TableCell>
                         <TableCell>
                           {r.status === "ok" && (
-                            <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-400">
+                            <Badge className="bg-success/15 text-success hover:bg-success/15">
                               OK
                             </Badge>
                           )}
                           {r.status === "review" && (
-                            <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 dark:text-amber-400">
+                            <Badge className="bg-warning/15 text-warning hover:bg-warning/15">
                               Revisar
                             </Badge>
                           )}
