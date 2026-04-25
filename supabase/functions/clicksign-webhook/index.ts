@@ -71,7 +71,7 @@ function extractEventName(payload: any): string {
 }
 
 async function notifyCreator(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   envelope: any,
   type: "success" | "info" | "warning" | "critical",
   title: string,
@@ -90,7 +90,7 @@ async function notifyCreator(
 }
 
 async function logServiceActivity(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   envelope: any,
   action: string,
   payload: Record<string, unknown>,
