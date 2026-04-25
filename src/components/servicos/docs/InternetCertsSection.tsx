@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload } from "lucide-react";
+import {
+  ExternalLink, Plus, Pencil, Trash2, RefreshCw, Info, Upload,
+  CheckCircle2, Clock, AlertTriangle, FileText,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +12,7 @@ import { cn } from "@/lib/utils";
 import {
   INTERNET_CERT_DEFAULTS, INTERNET_STATUS_LABEL, computeValidity,
   type ServiceParty, type InternetCertificate, type InternetCertificateType,
+  type ValidityInfo,
 } from "@/lib/serviceDocs";
 import { InternetCertDialog } from "./InternetCertDialog";
 import { AttachInternetCertDialog } from "./AttachInternetCertDialog";
