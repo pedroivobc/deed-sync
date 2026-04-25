@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type NotificationType = "critical" | "warning" | "info" | "success";
+export type NotificationCategory = "tarefa" | "agenda" | "importante" | "sistema";
 
 export interface AppNotification {
   id: string;
@@ -14,6 +15,8 @@ export interface AppNotification {
   related_entity_type: string | null;
   related_entity_id: string | null;
   read_at: string | null;
+  dismissed_at: string | null;
+  category: NotificationCategory | string;
   created_at: string;
 }
 
@@ -32,6 +35,7 @@ export function useNotifications() {
     const { data } = await supabase
       .from("notifications")
       .select("*")
+      .is("dismissed_at", null)
       .order("created_at", { ascending: false })
       .limit(50);
     setItems((data ?? []) as AppNotification[]);
@@ -73,5 +77,9 @@ export function useNotifications() {
       .is("read_at", null);
   };
 
-  return { items, loading, unreadCount, markAsRead, markAllAsRead, refresh: load };
+  const dismiss = async (id: string) => {
+    await supabase.from("notifications").update({ dismissed_at: new Date().toISOString() }).eq("id", id);
+  };
+
+  return { items, loading, unreadCount, markAsRead, markAllAsRead, dismiss, refresh: load };
 }
