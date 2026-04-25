@@ -22,6 +22,7 @@ const Financeiro = lazy(() => import("./pages/Financeiro"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Sobre = lazy(() => import("./pages/Sobre"));
 const Notificacoes = lazy(() => import("./pages/Notificacoes"));
+const Agenda = lazy(() => import("./pages/Agenda"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,7 @@ const App = () => (
                 <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
                 <Route path="/sobre" element={<ProtectedRoute><Sobre /></ProtectedRoute>} />
                 <Route path="/notificacoes" element={<ProtectedRoute><Notificacoes /></ProtectedRoute>} />
+                <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
