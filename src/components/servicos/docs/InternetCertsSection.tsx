@@ -257,12 +257,70 @@ export function InternetCertsSection({ serviceId, parties, internetCerts, onChan
   );
 }
 
-function InternetCertCard({
-  cfg, cert,
+/**
+ * Visual classification used for the row's icon, status badge and primary action.
+ * Combines DB status with computed validity (expired / expiring soon).
+ */
+type RowVariant = "issued" | "expiring" | "expired" | "pending" | "requested";
+
+function classifyRow(cert: InternetCertificate | undefined, v: ValidityInfo | null): RowVariant {
+  if (!cert) return "pending";
+  if (cert.status === "vencida" || v?.level === "expired") return "expired";
+  if (cert.status === "emitida") {
+    if (v?.level === "soon" || v?.level === "warn") return "expiring";
+    return "issued";
+  }
+  if (cert.status === "solicitada") return "requested";
+  return "pending";
+}
+
+const VARIANT_META: Record<RowVariant, {
+  Icon: typeof CheckCircle2;
+  iconWrap: string;
+  badge: string;
+  label: string;
+}> = {
+  issued: {
+    Icon: CheckCircle2,
+    iconWrap: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    badge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30",
+    label: "Emitida",
+  },
+  expiring: {
+    Icon: AlertTriangle,
+    iconWrap: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    badge: "bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30",
+    label: "Vencendo",
+  },
+  expired: {
+    Icon: AlertTriangle,
+    iconWrap: "bg-destructive/10 text-destructive",
+    badge: "bg-destructive/15 text-destructive border border-destructive/30",
+    label: "Vencida",
+  },
+  requested: {
+    Icon: Clock,
+    iconWrap: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    badge: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30",
+    label: "Solicitada",
+  },
+  pending: {
+    Icon: Clock,
+    iconWrap: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    badge: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30",
+    label: "Pendente",
+  },
+};
+
+function CertRow({
+  name, description, url, cert, isCustom,
   onCreate, onEdit, onRenew, onDelete, onAttach, onPreview, onRemoveFile,
 }: {
-  cfg: typeof INTERNET_CERT_DEFAULTS[number];
+  name: string;
+  description: string;
+  url: string | null;
   cert: InternetCertificate | undefined;
+  isCustom: boolean;
   onCreate: () => void;
   onEdit: () => void;
   onRenew: () => void;
@@ -272,129 +330,121 @@ function InternetCertCard({
   onRemoveFile: () => void;
 }) {
   const v = cert ? computeValidity(cert.expected_validity_date) : null;
-  const status = cert?.status ?? "pendente";
+  const variant = classifyRow(cert, v);
+  const meta = VARIANT_META[variant];
+  const { Icon } = meta;
   const hasFile = !!cert?.drive_file_id;
 
+  // Primary contextual action (right side)
+  let primaryAction: React.ReactNode = null;
+  if (variant === "issued" && hasFile) {
+    primaryAction = (
+      <Button size="sm" variant="outline" onClick={onPreview}>
+        <FileText className="mr-1.5 h-3.5 w-3.5" /> Abrir
+      </Button>
+    );
+  } else if (variant === "issued" && !hasFile) {
+    primaryAction = (
+      <Button size="sm" variant="outline" onClick={onAttach}>
+        <Upload className="mr-1.5 h-3.5 w-3.5" /> Anexar
+      </Button>
+    );
+  } else if (variant === "expired" || variant === "expiring") {
+    primaryAction = (
+      <Button size="sm" variant="outline" onClick={onRenew}>
+        <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Atualizar
+      </Button>
+    );
+  } else if (variant === "requested") {
+    primaryAction = (
+      <Button size="sm" variant="outline" onClick={onAttach}>
+        <Upload className="mr-1.5 h-3.5 w-3.5" /> Anexar emitida
+      </Button>
+    );
+  } else {
+    // pending / no record yet
+    primaryAction = url ? (
+      <Button size="sm" variant="default" asChild>
+        <a href={url} target="_blank" rel="noreferrer">
+          <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Emitir
+        </a>
+      </Button>
+    ) : (
+      <Button size="sm" variant="default" onClick={onCreate}>
+        Cadastrar
+      </Button>
+    );
+  }
+
+  // Secondary info line (validity / file)
+  const validityLine = cert?.expected_validity_date
+    ? `Validade ${new Date(cert.expected_validity_date).toLocaleDateString("pt-BR")}${
+        v && v.level !== "none" ? ` · ${v.label}` : ""
+      }`
+    : description;
+
   return (
-    <div className="space-y-2 rounded-lg border border-border bg-background p-3">
-      <div>
-        <p className="text-sm font-semibold">{cfg.label}</p>
-        <p className="text-[11px] text-muted-foreground">{cfg.description}</p>
+    <li className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40">
+      <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", meta.iconWrap)}>
+        <Icon className="h-4 w-4" />
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant="outline" className="text-[9px]">{INTERNET_STATUS_LABEL[status]}</Badge>
-        {v && cert?.expected_validity_date && <Badge className={cn("text-[9px]", v.badgeClass)}>{v.label}</Badge>}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+          {hasFile && (
+            <span title="Arquivo anexado" className="text-muted-foreground">
+              <FileText className="h-3 w-3" />
+            </span>
+          )}
+        </div>
+        <p className="truncate text-xs text-muted-foreground">{validityLine}</p>
       </div>
 
-      {cert?.expected_validity_date && (
-        <p className="text-[11px] text-muted-foreground">
-          Validade: {new Date(cert.expected_validity_date).toLocaleDateString("pt-BR")}
-        </p>
-      )}
+      <Badge className={cn("hidden shrink-0 text-[10px] font-medium sm:inline-flex", meta.badge)} variant="outline">
+        {meta.label}
+      </Badge>
 
-      {hasFile && cert ? (
-        <AttachedFileBadge
-          fileName={cert.file_name ?? "arquivo"}
-          fileSize={cert.file_size}
-          driveFileId={cert.drive_file_id!}
-          onPreview={onPreview}
-          onReplace={onAttach}
-          onRemove={onRemoveFile}
-          compact
-        />
-      ) : (
-        <Button size="sm" variant="outline" className="w-full" onClick={onAttach}>
-          <Upload className="mr-1.5 h-3 w-3" /> Anexar certidão emitida
-        </Button>
-      )}
+      <div className="flex shrink-0 items-center gap-1">
+        {primaryAction}
 
-      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <Button size="sm" variant="ghost" asChild>
-          <a href={cfg.url} target="_blank" rel="noreferrer">
-            <ExternalLink className="mr-1 h-3 w-3" /> Site
-          </a>
-        </Button>
-        {!cert ? (
-          <Button size="sm" variant="ghost" onClick={onCreate}>Cadastrar dados</Button>
-        ) : (
+        {/* Secondary actions: only when a record exists */}
+        {cert && (
           <>
-            {(v?.level === "expired" || v?.level === "soon") && (
-              <Button size="sm" variant="ghost" onClick={onRenew}>
-                <RefreshCw className="mr-1 h-3 w-3" /> Renovar
+            {hasFile && variant === "issued" && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={onRemoveFile}
+                title="Remover arquivo"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
             )}
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onEdit} title="Editar">
               <Pencil className="h-3.5 w-3.5" />
             </Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={onDelete}
+              title="Remover"
+            >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </>
         )}
-      </div>
-    </div>
-  );
-}
 
-function CustomCertCard({
-  cert, onEdit, onRenew, onDelete, onAttach, onPreview, onRemoveFile,
-}: {
-  cert: InternetCertificate;
-  onEdit: () => void;
-  onRenew: () => void;
-  onDelete: () => void;
-  onAttach: () => void;
-  onPreview: () => void;
-  onRemoveFile: () => void;
-}) {
-  const v = computeValidity(cert.expected_validity_date);
-  const hasFile = !!cert.drive_file_id;
-  return (
-    <div className="space-y-2 rounded-lg border border-border bg-background p-3">
-      <p className="text-sm font-semibold">{cert.custom_name ?? "Certidão customizada"}</p>
-      {cert.comarca && <p className="text-[11px] text-muted-foreground">{cert.comarca}</p>}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant="outline" className="text-[9px]">{INTERNET_STATUS_LABEL[cert.status]}</Badge>
-        {cert.expected_validity_date && <Badge className={cn("text-[9px]", v.badgeClass)}>{v.label}</Badge>}
-      </div>
-
-      {hasFile ? (
-        <AttachedFileBadge
-          fileName={cert.file_name ?? "arquivo"}
-          fileSize={cert.file_size}
-          driveFileId={cert.drive_file_id!}
-          onPreview={onPreview}
-          onReplace={onAttach}
-          onRemove={onRemoveFile}
-          compact
-        />
-      ) : (
-        <Button size="sm" variant="outline" className="w-full" onClick={onAttach}>
-          <Upload className="mr-1.5 h-3 w-3" /> Anexar certidão emitida
-        </Button>
-      )}
-
-      <div className="flex items-center gap-1 pt-1">
-        {cert.issuer_url && (
-          <Button size="sm" variant="ghost" asChild>
-            <a href={cert.issuer_url} target="_blank" rel="noreferrer">
-              <ExternalLink className="mr-1 h-3 w-3" /> Site
-            </a>
+        {!cert && url && (
+          <Button size="icon" variant="ghost" className="h-8 w-8" asChild title="Cadastrar dados">
+            <button type="button" onClick={onCreate}>
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
           </Button>
         )}
-        {(v.level === "expired" || v.level === "soon") && (
-          <Button size="sm" variant="ghost" onClick={onRenew}>
-            <RefreshCw className="mr-1 h-3 w-3" /> Renovar
-          </Button>
-        )}
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
       </div>
-    </div>
+    </li>
   );
 }
