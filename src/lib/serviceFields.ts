@@ -204,8 +204,9 @@ export function computeProgress(type: ServiceType, cf: AnyCustomFields): Section
       {
         key: "imovel", label: "Imóvel",
         ratio: ratio([
-          f.imovel.inscricao_iptu, f.imovel.matricula,
-          f.imovel.numero_matricula, f.imovel.endereco,
+          f.imovel.inscricao_iptu, f.imovel.matricula, f.imovel.oficio,
+          f.imovel.comarca_estado, f.imovel.endereco_logradouro,
+          f.imovel.numero, f.imovel.bairro, f.imovel.cidade, f.imovel.estado,
         ]),
       },
       {
@@ -250,8 +251,9 @@ export function computeProgress(type: ServiceType, cf: AnyCustomFields): Section
       {
         key: "imovel", label: "Imóvel",
         ratio: ratio([
-          f.imovel.inscricao_iptu, f.imovel.matricula,
-          f.imovel.numero_matricula, f.imovel.endereco,
+          f.imovel.inscricao_iptu, f.imovel.matricula, f.imovel.oficio,
+          f.imovel.comarca_estado, f.imovel.endereco_logradouro,
+          f.imovel.numero, f.imovel.bairro, f.imovel.cidade, f.imovel.estado,
         ]),
       },
       {
@@ -274,8 +276,9 @@ export function computeProgress(type: ServiceType, cf: AnyCustomFields): Section
     {
       key: "imovel", label: "Imóvel",
       ratio: ratio([
-        f.imovel.inscricao_iptu, f.imovel.matricula,
-        f.imovel.numero_matricula, f.imovel.endereco,
+        f.imovel.inscricao_iptu, f.imovel.matricula, f.imovel.oficio,
+        f.imovel.comarca_estado, f.imovel.endereco_logradouro,
+        f.imovel.numero, f.imovel.bairro, f.imovel.cidade, f.imovel.estado,
       ]),
     },
     {
