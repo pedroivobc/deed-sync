@@ -2,18 +2,14 @@ import { useState } from "react";
 import { ExternalLink, Pencil, FileText, Coins, AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { FieldLabel } from "../FormSection";
 import {
   ITBI_STATUS_LABEL, PROP_REG_TYPE_LABEL, PROP_REG_STATUS_LABEL,
   computeValidity,
   type PropertyItbi, type PropertyRegistration,
 } from "@/lib/serviceDocs";
-import type { EscrituraFields } from "@/lib/serviceFields";
 import { ItbiDialog } from "./ItbiDialog";
 import { PropertyRegistrationDialog } from "./PropertyRegistrationDialog";
 import { AttachPropertyRegistrationDialog } from "./AttachPropertyRegistrationDialog";
@@ -26,13 +22,11 @@ interface Props {
   serviceId: string;
   itbi: PropertyItbi | null;
   registration: PropertyRegistration | null;
-  imovel: EscrituraFields["imovel"];
-  onImovelChange: (v: Partial<EscrituraFields["imovel"]>) => void;
   onChanged: () => void;
 }
 
 export function PropertyDocsSection({
-  serviceId, itbi, registration, imovel, onImovelChange, onChanged,
+  serviceId, itbi, registration, onChanged,
 }: Props) {
   const [itbiOpen, setItbiOpen] = useState(false);
   const [regOpen, setRegOpen] = useState(false);
@@ -82,31 +76,7 @@ export function PropertyDocsSection({
         <h4 className="text-xs font-bold uppercase tracking-wider text-accent">Documentação do Imóvel</h4>
       </div>
 
-      {/* A) Dados básicos do imóvel */}
-      <div className="mb-5 grid gap-4 md:grid-cols-3">
-        <div>
-          <FieldLabel>Inscrição de IPTU</FieldLabel>
-          <Input value={imovel.inscricao_iptu ?? ""}
-            onChange={(e) => onImovelChange({ inscricao_iptu: e.target.value })} />
-        </div>
-        <div>
-          <FieldLabel>Matrícula (cartório/ofício)</FieldLabel>
-          <Input value={imovel.matricula ?? ""}
-            onChange={(e) => onImovelChange({ matricula: e.target.value })} />
-        </div>
-        <div>
-          <FieldLabel>Nº da matrícula</FieldLabel>
-          <Input value={imovel.numero_matricula ?? ""}
-            onChange={(e) => onImovelChange({ numero_matricula: e.target.value })} />
-        </div>
-        <div className="md:col-span-3">
-          <FieldLabel>Endereço completo do imóvel</FieldLabel>
-          <Textarea rows={2} value={imovel.endereco ?? ""}
-            onChange={(e) => onImovelChange({ endereco: e.target.value })} />
-        </div>
-      </div>
-
-      {/* B) ITBI */}
+      {/* A) ITBI */}
       <div className="mb-4 rounded-lg border-2 border-border bg-background p-4">
         <div className="mb-3 flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -143,7 +113,7 @@ export function PropertyDocsSection({
         )}
       </div>
 
-      {/* C) Matrícula */}
+      {/* B) Matrícula */}
       <div className="rounded-lg border-2 border-border bg-background p-4">
         {registration && (regValidity.level === "expired" || regValidity.level === "soon") && (
           <div className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">

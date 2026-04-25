@@ -46,8 +46,6 @@ export function EscrituraDocs({ serviceId, imovel, onImovelChange }: Props) {
           serviceId={serviceId}
           itbi={itbi}
           registration={registration}
-          imovel={imovel}
-          onImovelChange={onImovelChange}
           onChanged={reload}
         />
         <ClickSignSection

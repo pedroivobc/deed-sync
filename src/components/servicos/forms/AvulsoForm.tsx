@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { maskPhoneBR } from "@/lib/masks";
 import { FormSection, FieldLabel } from "../FormSection";
+import { ImovelSection } from "./ImovelSection";
 import type { AvulsoFields } from "@/lib/serviceFields";
 
 interface Props {
@@ -47,30 +48,10 @@ export function AvulsoForm({ value, onChange }: Props) {
         </div>
       </FormSection>
 
-      <FormSection title="Imóvel" id="section-imovel">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <FieldLabel>Inscrição de IPTU</FieldLabel>
-            <Input value={value.imovel.inscricao_iptu ?? ""}
-              onChange={(e) => set("imovel", { inscricao_iptu: e.target.value })} />
-          </div>
-          <div>
-            <FieldLabel>Matrícula</FieldLabel>
-            <Input value={value.imovel.matricula ?? ""}
-              onChange={(e) => set("imovel", { matricula: e.target.value })} />
-          </div>
-          <div>
-            <FieldLabel>Nº da matrícula</FieldLabel>
-            <Input value={value.imovel.numero_matricula ?? ""}
-              onChange={(e) => set("imovel", { numero_matricula: e.target.value })} />
-          </div>
-          <div className="md:col-span-3">
-            <FieldLabel>Endereço do imóvel</FieldLabel>
-            <Textarea rows={2} value={value.imovel.endereco ?? ""}
-              onChange={(e) => set("imovel", { endereco: e.target.value })} />
-          </div>
-        </div>
-      </FormSection>
+      <ImovelSection
+        value={value.imovel}
+        onChange={(v) => set("imovel", v)}
+      />
 
       <FormSection title="Descrição do Serviço" id="section-descricao_servico">
         <div className="grid gap-4">
