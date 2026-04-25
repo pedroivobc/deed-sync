@@ -17,6 +17,7 @@ import { maskPhoneBR } from "@/lib/masks";
 import { FormSection, FieldLabel } from "../FormSection";
 import { MoneyInput } from "../MoneyInput";
 import { EscrituraDocs } from "../docs/EscrituraDocs";
+import { ImovelSection } from "./ImovelSection";
 import { type EscrituraFields, TIPO_ESCRITURA_OPTIONS } from "@/lib/serviceFields";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -133,31 +134,11 @@ export function EscrituraForm({ value, onChange, serviceId }: Props) {
         </div>
       </FormSection>
 
-      {/* Imóvel — mantém os campos básicos editáveis aqui também */}
-      <FormSection title="Imóvel" id="section-imovel">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <FieldLabel>Inscrição de IPTU</FieldLabel>
-            <Input value={value.imovel.inscricao_iptu ?? ""}
-              onChange={(e) => set("imovel", { inscricao_iptu: e.target.value })} />
-          </div>
-          <div>
-            <FieldLabel>Matrícula (cartório/ofício)</FieldLabel>
-            <Input value={value.imovel.matricula ?? ""}
-              onChange={(e) => set("imovel", { matricula: e.target.value })} />
-          </div>
-          <div>
-            <FieldLabel>Nº da matrícula</FieldLabel>
-            <Input value={value.imovel.numero_matricula ?? ""}
-              onChange={(e) => set("imovel", { numero_matricula: e.target.value })} />
-          </div>
-          <div className="md:col-span-3">
-            <FieldLabel>Endereço completo do imóvel</FieldLabel>
-            <Textarea rows={2} value={value.imovel.endereco ?? ""}
-              onChange={(e) => set("imovel", { endereco: e.target.value })} />
-          </div>
-        </div>
-      </FormSection>
+      {/* Dados do Imóvel */}
+      <ImovelSection
+        value={value.imovel}
+        onChange={(v) => set("imovel", v)}
+      />
 
       {/* Processo e Contrato */}
       <FormSection title="Processo e Contrato" id="section-processo_contrato">
