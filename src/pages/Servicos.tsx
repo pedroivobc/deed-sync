@@ -10,7 +10,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  CalendarIcon, LayoutGrid, List as ListIcon, Plus, Search, Trash2,
+  CalendarIcon, LayoutGrid, List as ListIcon, Plus, Search, Trash2, Upload,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -43,6 +43,7 @@ import {
 import { getInitials } from "@/lib/clientUi";
 import { KanbanColumn } from "@/components/servicos/KanbanColumn";
 import { ServiceFormDialog } from "@/components/servicos/ServiceFormDialog";
+import { ImportCsvDialog } from "@/components/servicos/ImportCsvDialog";
 import type { ServiceCardData } from "@/components/servicos/ServiceCard";
 import { useServiceAlerts } from "@/hooks/useServiceAlerts";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
