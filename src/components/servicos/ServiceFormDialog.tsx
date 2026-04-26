@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, CalendarIcon, X, ExternalLink } from "lucide-react";
+import { ChevronLeft, CalendarIcon, X, ExternalLink, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +43,16 @@ import type { Database, Json } from "@/integrations/supabase/types";
 
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
 
+// services row may include columns added in newer migrations that aren't yet
+// reflected in the generated Supabase types file. We extend locally to keep
+// the form strict while still reading those fields without `any`.
+type ServiceRowWithProtocol = ServiceRow & {
+  protocolo?: string | null;
+  codigo_verificador?: string | null;
+  solicitante_nome?: string | null;
+  solicitante_email?: string | null;
+};
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +65,7 @@ interface UserOption { id: string; name: string | null; email: string | null; }
 export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Props) {
   const { user } = useAuth();
   const isEdit = !!service;
+  const serviceExt = service as ServiceRowWithProtocol | null;
 
   const [step, setStep] = useState<1 | 2>(isEdit ? 2 : 1);
   const [type, setType] = useState<ServiceType | null>(service?.type ?? null);
@@ -72,6 +83,11 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
 
   // Valor final do cálculo (sistema externo)
   const [valorCalculoFinal, setValorCalculoFinal] = useState<number | null>(null);
+
+  // Solicitante (público) — pré-preenchido a partir do cliente
+  const [solicitanteNome, setSolicitanteNome] = useState<string>("");
+  const [solicitanteEmail, setSolicitanteEmail] = useState<string>("");
+  const [copiedField, setCopiedField] = useState<"protocolo" | "codigo" | null>(null);
 
   // Custom fields
   const [customFields, setCustomFields] = useState<AnyCustomFields>(emptyForType("escritura"));
@@ -102,6 +118,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       setValorCalculoFinal(
         service.valor_calculo_final != null ? Number(service.valor_calculo_final) : null,
       );
+      setSolicitanteNome((serviceExt?.solicitante_nome ?? "") as string);
+      setSolicitanteEmail((serviceExt?.solicitante_email ?? "") as string);
       // parse custom_fields — fallback to empty for type
       const base = emptyForType(service.type);
       const parsed = service.custom_fields && typeof service.custom_fields === "object"
@@ -125,9 +143,21 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       setAssignedTo(user?.id ?? "");
       setPastaFisica(false);
       setValorCalculoFinal(null);
+      setSolicitanteNome("");
+      setSolicitanteEmail("");
       setCustomFields(emptyForType("escritura"));
     }
-  }, [open, service, user?.id]);
+  }, [open, service, user?.id, serviceExt?.solicitante_nome, serviceExt?.solicitante_email]);
+
+  // When creating a new service and the user picks a client, pre-fill the
+  // solicitante fields if they are still empty.
+  useEffect(() => {
+    if (isEdit) return;
+    if (!client) return;
+    if (!solicitanteNome && client.name) setSolicitanteNome(client.name);
+    if (!solicitanteEmail && client.email) setSolicitanteEmail(client.email);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client?.id, isEdit]);
 
   useEffect(() => {
     if (!open) return;
@@ -213,6 +243,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       assigned_to: assignedTo || null, pasta_fisica: pastaFisica,
       completed_at, custom_fields: cf as unknown as Json,
       valor_calculo_final: valorCalculoFinal,
+      solicitante_nome: solicitanteNome.trim() || null,
+      solicitante_email: solicitanteEmail.trim() || null,
     };
 
     let result;
@@ -231,6 +263,21 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     if (serviceId) {
       if (!isEdit) {
         await logChange(serviceId, "created", { type, stage, subject: payload.subject });
+        // Trigger initial email (creation = first status change).
+        // We fetch the latest history row created by the DB trigger, then call
+        // send-status-email with it. Fire-and-forget so the UI stays snappy.
+        void (async () => {
+          const { data: lastHist } = await supabase
+            .from("service_status_history")
+            .select("id")
+            .eq("service_id", serviceId)
+            .order("data_alteracao", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          await supabase.functions.invoke("send-status-email", {
+            body: { service_id: serviceId, history_id: lastHist?.id ?? null },
+          });
+        })();
         // Fire-and-forget: create Google Drive folder structure
         const matricula = type === "escritura"
           ? ((cf.imovel as Record<string, unknown> | undefined)?.matricula_numero as string | undefined)
@@ -249,6 +296,19 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
       } else if (previous) {
         if (previous.stage !== stage) {
           await logChange(serviceId, "stage_changed", { from: previous.stage, to: stage });
+          // Stage changed → notify solicitante by email
+          void (async () => {
+            const { data: lastHist } = await supabase
+              .from("service_status_history")
+              .select("id")
+              .eq("service_id", serviceId)
+              .order("data_alteracao", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            await supabase.functions.invoke("send-status-email", {
+              body: { service_id: serviceId, history_id: lastHist?.id ?? null },
+            });
+          })();
         }
         if ((previous.etapa_tarefa ?? "") !== taskStep) {
           await logChange(serviceId, "task_step_changed", { from: previous.etapa_tarefa, to: taskStep });
@@ -307,6 +367,16 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
     document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const copyValue = async (value: string, field: "protocolo" | "codigo") => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 1500);
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -335,6 +405,21 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                     <Badge className={cn("text-xs", STAGE_BADGE_CLASS[stage])}>
                       {STAGE_LABEL[stage]}
                     </Badge>
+                    {isEdit && serviceExt?.protocolo && (
+                      <button
+                        type="button"
+                        onClick={() => copyValue(serviceExt.protocolo!, "protocolo")}
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 font-mono text-[11px] text-foreground hover:bg-muted"
+                        title="Copiar protocolo"
+                      >
+                        {serviceExt.protocolo}
+                        {copiedField === "protocolo" ? (
+                          <Check className="h-3 w-3 text-success" />
+                        ) : (
+                          <Copy className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -430,6 +515,74 @@ export function ServiceFormDialog({ open, onOpenChange, service, onSaved }: Prop
                           <label className="flex items-center gap-2"><RadioGroupItem value="nao" id="pf-nao" /> Não</label>
                         </RadioGroup>
                       </div>
+                    </div>
+                  </FormSection>
+
+                  {/* Acompanhamento público */}
+                  <FormSection title="Acompanhamento público" id="section-acompanhar">
+                    <div className="space-y-4">
+                      <p className="text-xs text-muted-foreground">
+                        O cliente recebe e-mails automáticos a cada mudança de etapa, com link para a página pública de acompanhamento.
+                      </p>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label className="text-xs">Nome do solicitante</Label>
+                          <Input
+                            value={solicitanteNome}
+                            onChange={(e) => setSolicitanteNome(e.target.value)}
+                            placeholder="Nome que aparecerá no e-mail"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">E-mail do solicitante *</Label>
+                          <Input
+                            type="email"
+                            value={solicitanteEmail}
+                            onChange={(e) => setSolicitanteEmail(e.target.value)}
+                            placeholder="cliente@exemplo.com"
+                          />
+                        </div>
+                      </div>
+
+                      {isEdit && serviceExt?.protocolo && (
+                        <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3 md:grid-cols-2">
+                          <div>
+                            <p className="text-[11px] uppercase text-muted-foreground">Protocolo</p>
+                            <button
+                              type="button"
+                              onClick={() => copyValue(serviceExt.protocolo!, "protocolo")}
+                              className="mt-1 inline-flex items-center gap-2 font-mono text-sm font-semibold text-foreground hover:underline"
+                            >
+                              {serviceExt.protocolo}
+                              {copiedField === "protocolo" ? (
+                                <Check className="h-3.5 w-3.5 text-success" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                            </button>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase text-muted-foreground">Código Verificador</p>
+                            <button
+                              type="button"
+                              onClick={() => copyValue(serviceExt.codigo_verificador ?? "", "codigo")}
+                              className="mt-1 inline-flex items-center gap-2 font-mono text-sm font-semibold tracking-widest text-foreground hover:underline"
+                            >
+                              {serviceExt.codigo_verificador ?? "—"}
+                              {copiedField === "codigo" ? (
+                                <Check className="h-3.5 w-3.5 text-success" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {!isEdit && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Protocolo e código verificador são gerados automaticamente ao criar o serviço.
+                        </p>
+                      )}
                     </div>
                   </FormSection>
 

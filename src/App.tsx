@@ -23,6 +23,7 @@ const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Sobre = lazy(() => import("./pages/Sobre"));
 const Notificacoes = lazy(() => import("./pages/Notificacoes"));
 const Agenda = lazy(() => import("./pages/Agenda"));
+const Acompanhar = lazy(() => import("./pages/Acompanhar"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,7 @@ const App = () => (
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/acompanhar" element={<Acompanhar />} />
                 <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
                 <Route path="/servicos" element={<ProtectedRoute><Servicos /></ProtectedRoute>} />
