@@ -10,7 +10,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  CalendarIcon, CheckSquare, LayoutGrid, List as ListIcon, Plus, Search, Trash2, Upload,
+  CalendarIcon, CheckSquare, Eye, EyeOff, LayoutGrid, List as ListIcon, Plus, Search, Trash2, Upload,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -78,6 +78,19 @@ export default function Servicos() {
   const [assignedFilter, setAssignedFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [dateTo, setDateTo] = useState<Date | null>(null);
+  // Hide services in "concluido" stage to prioritize active work. Persisted in localStorage.
+  const [hideConcluidos, setHideConcluidos] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const saved = window.localStorage.getItem("servicos:hideConcluidos");
+    return saved === null ? true : saved === "1";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("servicos:hideConcluidos", hideConcluidos ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [hideConcluidos]);
 
   // Dialog
   const [formOpen, setFormOpen] = useState(false);
@@ -164,6 +177,7 @@ export default function Servicos() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return services.filter((s) => {
+      if (hideConcluidos && s.stage === "concluido") return false;
       if (typeFilter !== "all" && s.type !== typeFilter) return false;
       if (assignedFilter !== "all" && s.assigned_to !== assignedFilter) return false;
       if (dateFrom && new Date(s.created_at) < dateFrom) return false;
@@ -178,7 +192,19 @@ export default function Servicos() {
       }
       return true;
     });
-  }, [services, search, typeFilter, assignedFilter, dateFrom, dateTo]);
+  }, [services, search, typeFilter, assignedFilter, dateFrom, dateTo, hideConcluidos]);
+
+  // Count of concluded services (ignores other filters) — shown next to toggle for context.
+  const concluidosCount = useMemo(
+    () => services.filter((s) => s.stage === "concluido").length,
+    [services]
+  );
+
+  // Stages displayed in Kanban — hide "concluido" column when toggle is on.
+  const visibleStages = useMemo(
+    () => (hideConcluidos ? STAGE_ORDER.filter((s) => s !== "concluido") : STAGE_ORDER),
+    [hideConcluidos]
+  );
 
   // Group for Kanban
   const grouped = useMemo(() => {
@@ -404,6 +430,33 @@ export default function Servicos() {
               </SelectContent>
             </Select>
 
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={hideConcluidos ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setHideConcluidos((v) => !v)}
+                    className="gap-1.5"
+                  >
+                    {hideConcluidos ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {hideConcluidos ? "Concluídos ocultos" : "Mostrando concluídos"}
+                    {concluidosCount > 0 && (
+                      <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+                        {concluidosCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hideConcluidos
+                    ? "Clique para mostrar os serviços concluídos"
+                    : "Clique para ocultar os serviços concluídos"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             <div className="relative min-w-[220px] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -487,7 +540,7 @@ export default function Servicos() {
         ) : view === "kanban" ? (
           <DndContext sensors={sensors} onDragEnd={onDragEnd}>
             <div className="flex gap-3 overflow-x-auto pb-4">
-              {STAGE_ORDER.map((s) => (
+              {visibleStages.map((s) => (
                 <KanbanColumn
                   key={s}
                   stage={s}
