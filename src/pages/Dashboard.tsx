@@ -80,7 +80,7 @@ export default function Dashboard() {
     "usuário";
 
   return (
-    <AppLayout>
+    <AppLayout title="Início">
       <div className="space-y-6">
         {/* Welcome */}
         <div>
