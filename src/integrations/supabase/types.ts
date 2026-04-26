@@ -1548,10 +1548,62 @@ export type Database = {
           },
         ]
       }
+      service_status_history: {
+        Row: {
+          changed_by: string | null
+          data_alteracao: string
+          descricao: string | null
+          email_error: string | null
+          email_sent: boolean
+          email_sent_at: string | null
+          id: string
+          service_id: string
+          stage: Database["public"]["Enums"]["service_stage"]
+        }
+        Insert: {
+          changed_by?: string | null
+          data_alteracao?: string
+          descricao?: string | null
+          email_error?: string | null
+          email_sent?: boolean
+          email_sent_at?: string | null
+          id?: string
+          service_id: string
+          stage: Database["public"]["Enums"]["service_stage"]
+        }
+        Update: {
+          changed_by?: string | null
+          data_alteracao?: string
+          descricao?: string | null
+          email_error?: string | null
+          email_sent?: boolean
+          email_sent_at?: string | null
+          id?: string
+          service_id?: string
+          stage?: Database["public"]["Enums"]["service_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_status_history_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           assigned_to: string | null
           client_id: string | null
+          codigo_verificador: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
@@ -1561,6 +1613,9 @@ export type Database = {
           etapa_tarefa: string | null
           id: string
           pasta_fisica: boolean
+          protocolo: string | null
+          solicitante_email: string | null
+          solicitante_nome: string | null
           stage: Database["public"]["Enums"]["service_stage"]
           subject: string
           type: Database["public"]["Enums"]["service_type"]
@@ -1570,6 +1625,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           client_id?: string | null
+          codigo_verificador?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -1579,6 +1635,9 @@ export type Database = {
           etapa_tarefa?: string | null
           id?: string
           pasta_fisica?: boolean
+          protocolo?: string | null
+          solicitante_email?: string | null
+          solicitante_nome?: string | null
           stage?: Database["public"]["Enums"]["service_stage"]
           subject: string
           type: Database["public"]["Enums"]["service_type"]
@@ -1588,6 +1647,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           client_id?: string | null
+          codigo_verificador?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -1597,6 +1657,9 @@ export type Database = {
           etapa_tarefa?: string | null
           id?: string
           pasta_fisica?: boolean
+          protocolo?: string | null
+          solicitante_email?: string | null
+          solicitante_nome?: string | null
           stage?: Database["public"]["Enums"]["service_stage"]
           subject?: string
           type?: Database["public"]["Enums"]["service_type"]
@@ -1707,6 +1770,8 @@ export type Database = {
     }
     Functions: {
       check_document_expirations: { Args: never; Returns: undefined }
+      generate_codigo_verificador: { Args: never; Returns: string }
+      generate_protocolo: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
