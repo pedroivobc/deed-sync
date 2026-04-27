@@ -33,6 +33,9 @@ import { IconAction } from "@/components/ui/icon-action";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { notify, humanizeBackendError } from "@/lib/notify";
+import { ResizableTableHead } from "@/components/ui/resizable-table-head";
+import { useResizableColumns } from "@/hooks/useResizableColumns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,6 +69,30 @@ const PAGE_SIZE = 25;
 export default function Servicos() {
   const { user } = useAuth();
   const { canDeleteService } = usePermissions();
+  const isMobile = useIsMobile();
+
+  // Persisted column widths for the list view. Keys must match the header IDs below.
+  const COLUMN_DEFAULTS = useMemo(
+    () => ({
+      select: 40,
+      subject: 260,
+      type: 130,
+      client: 200,
+      stage: 130,
+      etapa_processo: 180,
+      created_at: 110,
+      due_date: 110,
+      assigned: 180,
+      actions: 80,
+    }),
+    [],
+  );
+  const { getWidth, startResize } = useResizableColumns({
+    storageKey: "servicos:columnWidths",
+    defaults: COLUMN_DEFAULTS,
+    min: 80,
+    max: 600,
+  });
 
   const [view, setView] = useState<"kanban" | "lista">("kanban");
   const [services, setServices] = useState<ServiceFull[]>([]);
@@ -557,25 +584,39 @@ export default function Servicos() {
           </DndContext>
         ) : (
           <Card className="overflow-hidden">
-            <Table>
+            <Table style={{ tableLayout: "fixed" }}>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-8">
+                  <ResizableTableHead
+                    width={getWidth("select")}
+                    onResizeStart={(e) => startResize("select", e)}
+                    disableResize
+                  >
                     <Checkbox
                       checked={allOnPageSelected}
                       onCheckedChange={togglePageSelection}
                       aria-label="Selecionar todos da página"
                     />
-                  </TableHead>
-                  <SortHeader label="Assunto" col="subject" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Etapa</TableHead>
-                  <TableHead>Etapa do processo</TableHead>
-                  <SortHeader label="Entrada" col="created_at" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
-                  <SortHeader label="Prazo" col="due_date" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
-                  <TableHead>Responsável</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  </ResizableTableHead>
+                  <ResizableTableHead
+                    width={getWidth("subject")}
+                    onResizeStart={(e) => startResize("subject", e)}
+                    disableResize={isMobile}
+                  >
+                    <SortButton label="Assunto" col="subject" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
+                  </ResizableTableHead>
+                  <ResizableTableHead width={getWidth("type")} onResizeStart={(e) => startResize("type", e)} disableResize={isMobile}>Tipo</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("client")} onResizeStart={(e) => startResize("client", e)} disableResize={isMobile}>Cliente</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("stage")} onResizeStart={(e) => startResize("stage", e)} disableResize={isMobile}>Etapa</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("etapa_processo")} onResizeStart={(e) => startResize("etapa_processo", e)} disableResize={isMobile}>Etapa do processo</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("created_at")} onResizeStart={(e) => startResize("created_at", e)} disableResize={isMobile}>
+                    <SortButton label="Entrada" col="created_at" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
+                  </ResizableTableHead>
+                  <ResizableTableHead width={getWidth("due_date")} onResizeStart={(e) => startResize("due_date", e)} disableResize={isMobile}>
+                    <SortButton label="Prazo" col="due_date" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
+                  </ResizableTableHead>
+                  <ResizableTableHead width={getWidth("assigned")} onResizeStart={(e) => startResize("assigned", e)} disableResize={isMobile}>Responsável</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("actions")} onResizeStart={(e) => startResize("actions", e)} disableResize className="text-right">Ações</ResizableTableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -597,14 +638,14 @@ export default function Servicos() {
                       handleOpenEdit(s.id);
                     }}
                   >
-                    <TableCell onClick={(e) => e.stopPropagation()} className="w-8">
+                    <TableCell onClick={(e) => e.stopPropagation()} style={{ width: getWidth("select"), minWidth: getWidth("select"), maxWidth: getWidth("select") }}>
                       <Checkbox
                         checked={selection.isSelected(s.id)}
                         onCheckedChange={() => selection.toggle(s.id)}
                         aria-label="Selecionar serviço"
                       />
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="truncate font-medium" style={{ width: getWidth("subject"), minWidth: getWidth("subject"), maxWidth: getWidth("subject") }}>
                       <div className="flex items-center gap-2">
                         {s.type === "escritura" && alertsMap[s.id]?.hasExpired && (
                           <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 text-destructive" aria-label="Documento vencido" />
@@ -615,20 +656,20 @@ export default function Servicos() {
                         {s.type === "escritura" && !alertsMap[s.id]?.hasExpired && !alertsMap[s.id]?.expiringSoon && alertsMap[s.id]?.complete && (
                           <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-success" aria-label="Documentação completa" />
                         )}
-                        <span>{s.subject}</span>
+                        <span className="truncate">{s.subject}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell style={{ width: getWidth("type"), minWidth: getWidth("type"), maxWidth: getWidth("type") }}>
                       <Badge className={cn("text-[10px] uppercase", SERVICE_TYPE_BADGE[s.type])}>
                         {SERVICE_TYPE_LABEL[s.type]}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="truncate" style={{ width: getWidth("client"), minWidth: getWidth("client"), maxWidth: getWidth("client") }}>
                       {s.client ? (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="cursor-help underline-offset-2 hover:underline">{s.client.name}</span>
+                              <span className="block cursor-help truncate underline-offset-2 hover:underline">{s.client.name}</span>
                             </TooltipTrigger>
                             <TooltipContent>{s.client.cpf_cnpj ?? "Sem documento"}</TooltipContent>
                           </Tooltip>
@@ -637,25 +678,25 @@ export default function Servicos() {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell style={{ width: getWidth("stage"), minWidth: getWidth("stage"), maxWidth: getWidth("stage") }}>
                       <Badge className={cn("text-xs", STAGE_BADGE_CLASS[s.stage])}>{STAGE_LABEL[s.stage]}</Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{s.etapa_processo ?? "—"}</TableCell>
-                    <TableCell className="text-sm">{format(new Date(s.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                    <TableCell className={cn("text-sm", dueDateColorClass(s.due_date))}>
+                    <TableCell className="truncate text-sm text-muted-foreground" style={{ width: getWidth("etapa_processo"), minWidth: getWidth("etapa_processo"), maxWidth: getWidth("etapa_processo") }}>{s.etapa_processo ?? "—"}</TableCell>
+                    <TableCell className="text-sm" style={{ width: getWidth("created_at"), minWidth: getWidth("created_at"), maxWidth: getWidth("created_at") }}>{format(new Date(s.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                    <TableCell className={cn("text-sm", dueDateColorClass(s.due_date))} style={{ width: getWidth("due_date"), minWidth: getWidth("due_date"), maxWidth: getWidth("due_date") }}>
                       {s.due_date ? format(new Date(s.due_date), "dd/MM/yyyy") : "—"}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="truncate text-sm" style={{ width: getWidth("assigned"), minWidth: getWidth("assigned"), maxWidth: getWidth("assigned") }}>
                       {s.assigned ? (
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
                             {getInitials(s.assigned.name ?? s.assigned.email)}
                           </div>
-                          <span>{s.assigned.name ?? s.assigned.email}</span>
+                          <span className="truncate">{s.assigned.name ?? s.assigned.email}</span>
                         </div>
                       ) : <span className="text-muted-foreground">—</span>}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" style={{ width: getWidth("actions"), minWidth: getWidth("actions"), maxWidth: getWidth("actions") }}>
                       {canDelete(s) && (
                         <IconAction
                           label="Excluir serviço"
@@ -717,7 +758,7 @@ export default function Servicos() {
   );
 }
 
-function SortHeader({
+function SortButton({
   label, col, sortBy, sortDir, onSort,
 }: {
   label: string; col: "created_at" | "due_date" | "subject";
@@ -725,16 +766,14 @@ function SortHeader({
 }) {
   const active = sortBy === col;
   return (
-    <TableHead>
-      <button
-        type="button"
-        onClick={() => onSort(col)}
-        className="inline-flex items-center gap-1 font-medium hover:text-foreground"
-      >
-        {label}
-        {active && <span className="text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>}
-      </button>
-    </TableHead>
+    <button
+      type="button"
+      onClick={() => onSort(col)}
+      className="inline-flex items-center gap-1 font-medium hover:text-foreground"
+    >
+      {label}
+      {active && <span className="text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>}
+    </button>
   );
 }
 
