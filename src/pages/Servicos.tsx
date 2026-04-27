@@ -64,7 +64,6 @@ type ClientLite = { id: string; name: string; cpf_cnpj: string | null };
 interface ServiceFull extends ServiceRow {
   client: ClientLite | null;
   assigned: ProfileRow | null;
-  service_stage_id?: string | null;
 }
 
 const PAGE_SIZE = 25;
