@@ -584,25 +584,39 @@ export default function Servicos() {
           </DndContext>
         ) : (
           <Card className="overflow-hidden">
-            <Table>
+            <Table style={{ tableLayout: "fixed" }}>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-8">
+                  <ResizableTableHead
+                    width={getWidth("select")}
+                    onResizeStart={(e) => startResize("select", e)}
+                    disableResize
+                  >
                     <Checkbox
                       checked={allOnPageSelected}
                       onCheckedChange={togglePageSelection}
                       aria-label="Selecionar todos da página"
                     />
-                  </TableHead>
-                  <SortHeader label="Assunto" col="subject" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Etapa</TableHead>
-                  <TableHead>Etapa do processo</TableHead>
-                  <SortHeader label="Entrada" col="created_at" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
-                  <SortHeader label="Prazo" col="due_date" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
-                  <TableHead>Responsável</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  </ResizableTableHead>
+                  <ResizableTableHead
+                    width={getWidth("subject")}
+                    onResizeStart={(e) => startResize("subject", e)}
+                    disableResize={isMobile}
+                  >
+                    <SortButton label="Assunto" col="subject" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
+                  </ResizableTableHead>
+                  <ResizableTableHead width={getWidth("type")} onResizeStart={(e) => startResize("type", e)} disableResize={isMobile}>Tipo</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("client")} onResizeStart={(e) => startResize("client", e)} disableResize={isMobile}>Cliente</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("stage")} onResizeStart={(e) => startResize("stage", e)} disableResize={isMobile}>Etapa</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("etapa_processo")} onResizeStart={(e) => startResize("etapa_processo", e)} disableResize={isMobile}>Etapa do processo</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("created_at")} onResizeStart={(e) => startResize("created_at", e)} disableResize={isMobile}>
+                    <SortButton label="Entrada" col="created_at" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
+                  </ResizableTableHead>
+                  <ResizableTableHead width={getWidth("due_date")} onResizeStart={(e) => startResize("due_date", e)} disableResize={isMobile}>
+                    <SortButton label="Prazo" col="due_date" sortBy={sortBy} sortDir={sortDir} onSort={(c) => { setSortBy(c); setSortDir(sortBy === c && sortDir === "asc" ? "desc" : "asc"); }} />
+                  </ResizableTableHead>
+                  <ResizableTableHead width={getWidth("assigned")} onResizeStart={(e) => startResize("assigned", e)} disableResize={isMobile}>Responsável</ResizableTableHead>
+                  <ResizableTableHead width={getWidth("actions")} onResizeStart={(e) => startResize("actions", e)} disableResize className="text-right">Ações</ResizableTableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
