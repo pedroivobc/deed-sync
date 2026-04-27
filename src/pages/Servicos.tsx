@@ -758,7 +758,7 @@ export default function Servicos() {
   );
 }
 
-function SortHeader({
+function SortButton({
   label, col, sortBy, sortDir, onSort,
 }: {
   label: string; col: "created_at" | "due_date" | "subject";
@@ -766,16 +766,14 @@ function SortHeader({
 }) {
   const active = sortBy === col;
   return (
-    <TableHead>
-      <button
-        type="button"
-        onClick={() => onSort(col)}
-        className="inline-flex items-center gap-1 font-medium hover:text-foreground"
-      >
-        {label}
-        {active && <span className="text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>}
-      </button>
-    </TableHead>
+    <button
+      type="button"
+      onClick={() => onSort(col)}
+      className="inline-flex items-center gap-1 font-medium hover:text-foreground"
+    >
+      {label}
+      {active && <span className="text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>}
+    </button>
   );
 }
 
