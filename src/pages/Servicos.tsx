@@ -46,6 +46,8 @@ import {
 } from "@/lib/serviceUi";
 import { getInitials } from "@/lib/clientUi";
 import { KanbanColumn } from "@/components/servicos/KanbanColumn";
+import { DynamicKanbanColumn } from "@/components/servicos/DynamicKanbanColumn";
+import { useServiceStages } from "@/hooks/useServiceStages";
 import { ServiceFormDialog } from "@/components/servicos/ServiceFormDialog";
 import { ImportCsvDialog } from "@/components/servicos/ImportCsvDialog";
 import { BulkActionBar } from "@/components/servicos/BulkActionBar";
@@ -62,6 +64,7 @@ type ClientLite = { id: string; name: string; cpf_cnpj: string | null };
 interface ServiceFull extends ServiceRow {
   client: ClientLite | null;
   assigned: ProfileRow | null;
+  service_stage_id?: string | null;
 }
 
 const PAGE_SIZE = 25;
