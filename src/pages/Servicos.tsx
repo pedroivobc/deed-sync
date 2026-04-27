@@ -33,6 +33,9 @@ import { IconAction } from "@/components/ui/icon-action";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { notify, humanizeBackendError } from "@/lib/notify";
+import { ResizableTableHead } from "@/components/ui/resizable-table-head";
+import { useResizableColumns } from "@/hooks/useResizableColumns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
