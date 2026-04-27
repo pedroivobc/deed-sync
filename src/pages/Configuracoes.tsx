@@ -14,6 +14,7 @@ import { PreferencesPanel } from "@/components/PreferencesPanel";
 import { AuditLogPanel } from "@/components/AuditLogPanel";
 import { IntegrationsPanel } from "@/components/IntegrationsPanel";
 import { ClickSignTemplatesPanel } from "@/components/ClickSignTemplatesPanel";
+import { ServiceStagesPanel } from "@/components/ServiceStagesPanel";
 
 export default function Configuracoes() {
   const { profile, refreshProfile, isAdmin } = useAuth();
@@ -77,6 +78,7 @@ export default function Configuracoes() {
             {canManageUsers && <TabsTrigger value="usuarios">Gestão de Usuários</TabsTrigger>}
             {isAdmin && <TabsTrigger value="integracoes">Integrações</TabsTrigger>}
             {isAdmin && <TabsTrigger value="templates">Templates</TabsTrigger>}
+            {canManageUsers && <TabsTrigger value="etapas">Etapas</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="perfil">
@@ -159,6 +161,12 @@ export default function Configuracoes() {
           {isAdmin && (
             <TabsContent value="templates">
               <ClickSignTemplatesPanel />
+            </TabsContent>
+          )}
+
+          {canManageUsers && (
+            <TabsContent value="etapas">
+              <ServiceStagesPanel />
             </TabsContent>
           )}
         </Tabs>
