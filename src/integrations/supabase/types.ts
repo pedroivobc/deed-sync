@@ -1548,6 +1548,56 @@ export type Database = {
           },
         ]
       }
+      service_stages: {
+        Row: {
+          category: Database["public"]["Enums"]["service_stage_category"]
+          color: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          tipo_servico: Database["public"]["Enums"]["service_type"]
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["service_stage_category"]
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          tipo_servico: Database["public"]["Enums"]["service_type"]
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["service_stage_category"]
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          tipo_servico?: Database["public"]["Enums"]["service_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_stages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_status_history: {
         Row: {
           changed_by: string | null
@@ -1614,6 +1664,7 @@ export type Database = {
           id: string
           pasta_fisica: boolean
           protocolo: string | null
+          service_stage_id: string | null
           solicitante_email: string | null
           solicitante_nome: string | null
           stage: Database["public"]["Enums"]["service_stage"]
@@ -1636,6 +1687,7 @@ export type Database = {
           id?: string
           pasta_fisica?: boolean
           protocolo?: string | null
+          service_stage_id?: string | null
           solicitante_email?: string | null
           solicitante_nome?: string | null
           stage?: Database["public"]["Enums"]["service_stage"]
@@ -1658,6 +1710,7 @@ export type Database = {
           id?: string
           pasta_fisica?: boolean
           protocolo?: string | null
+          service_stage_id?: string | null
           solicitante_email?: string | null
           solicitante_nome?: string | null
           stage?: Database["public"]["Enums"]["service_stage"]
@@ -1686,6 +1739,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_service_stage_id_fkey"
+            columns: ["service_stage_id"]
+            isOneToOne: false
+            referencedRelation: "service_stages"
             referencedColumns: ["id"]
           },
         ]
@@ -1944,6 +2004,7 @@ export type Database = {
         | "execucao"
         | "revisao"
         | "concluido"
+      service_stage_category: "active" | "done" | "closed"
       service_type: "escritura" | "avulso" | "regularizacao"
       signature_mode: "online" | "presencial" | "hibrida"
       theme_pref: "light" | "dark"
@@ -2254,6 +2315,7 @@ export const Constants = {
         "revisao",
         "concluido",
       ],
+      service_stage_category: ["active", "done", "closed"],
       service_type: ["escritura", "avulso", "regularizacao"],
       signature_mode: ["online", "presencial", "hibrida"],
       theme_pref: ["light", "dark"],
