@@ -33,13 +33,23 @@ export function useServiceStages(tipo: ServiceType | null, includeInactive = fal
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      let q = supabase
-        .from("service_stages" as never)
-        .select("*")
-        .eq("tipo_servico", tipo)
-        .order("display_order", { ascending: true });
-      if (!includeInactive) q = q.eq("is_active", true);
-      const { data, error } = await q;
+      // `service_stages` was added by a recent migration and isn't in the
+      // generated types yet — cast to keep this hook strict elsewhere.
+      type AnyTable = {
+        select: (cols: string) => {
+          eq: (col: string, val: string) => {
+            order: (col: string, opts: { ascending: boolean }) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+            eq: (col: string, val: boolean) => {
+              order: (col: string, opts: { ascending: boolean }) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+            };
+          };
+        };
+      };
+      const table = (supabase.from as unknown as (n: string) => AnyTable)("service_stages");
+      const base = table.select("*").eq("tipo_servico", tipo);
+      const { data, error } = await (includeInactive
+        ? base.order("display_order", { ascending: true })
+        : base.eq("is_active", true).order("display_order", { ascending: true }));
       if (cancelled) return;
       if (!error) setStages((data ?? []) as unknown as ServiceStageRow[]);
       setLoading(false);
