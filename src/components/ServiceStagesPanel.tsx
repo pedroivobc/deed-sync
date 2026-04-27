@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
 import { useServiceStages, STAGE_CATEGORY_LABEL, type ServiceStageRow, type StageCategory } from "@/hooks/useServiceStages";
 import { DynamicStageBadge } from "@/components/servicos/DynamicStageBadge";
 import { SERVICE_TYPE_LABEL, type ServiceType } from "@/lib/serviceUi";
@@ -37,8 +37,8 @@ const PRESET_COLORS = [
 ];
 
 export function ServiceStagesPanel() {
-  const { isAdminOrManager } = usePermissions();
-  const canEdit = isAdminOrManager;
+  const { roles } = useAuth();
+  const canEdit = roles.some((r) => r === "administrador" || r === "gerente");
 
   const [tipo, setTipo] = useState<ServiceType>("escritura");
   const { stages, loading } = useServiceStages(tipo, /* includeInactive */ true);
@@ -81,7 +81,13 @@ export function ServiceStagesPanel() {
       display_order: editing.display_order,
       is_active: editing.is_active,
     };
-    const table = supabase.from("service_stages" as never);
+    // Cast: `service_stages` was added by a recent migration and isn't in the
+    // generated types yet. We narrow inputs locally to keep the rest type-safe.
+    type AnyTable = ReturnType<typeof supabase.from> & {
+      insert: (v: unknown) => Promise<{ error: { message: string } | null }>;
+      update: (v: unknown) => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> };
+    };
+    const table = (supabase.from as unknown as (n: string) => AnyTable)("service_stages");
     const result = editing.id
       ? await table.update(payload).eq("id", editing.id)
       : await table.insert(payload);
@@ -95,7 +101,9 @@ export function ServiceStagesPanel() {
 
   const handleDelete = async () => {
     if (!toDelete) return;
-    const { error } = await supabase.from("service_stages" as never).delete().eq("id", toDelete.id);
+    type DelTable = { delete: () => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> } };
+    const tbl = (supabase.from as unknown as (n: string) => DelTable)("service_stages");
+    const { error } = await tbl.delete().eq("id", toDelete.id);
     if (error) {
       toast.error(error.message);
       return;
