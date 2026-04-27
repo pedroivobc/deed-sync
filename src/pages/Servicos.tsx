@@ -69,6 +69,30 @@ const PAGE_SIZE = 25;
 export default function Servicos() {
   const { user } = useAuth();
   const { canDeleteService } = usePermissions();
+  const isMobile = useIsMobile();
+
+  // Persisted column widths for the list view. Keys must match the header IDs below.
+  const COLUMN_DEFAULTS = useMemo(
+    () => ({
+      select: 40,
+      subject: 260,
+      type: 130,
+      client: 200,
+      stage: 130,
+      etapa_processo: 180,
+      created_at: 110,
+      due_date: 110,
+      assigned: 180,
+      actions: 80,
+    }),
+    [],
+  );
+  const { getWidth, startResize } = useResizableColumns({
+    storageKey: "servicos:columnWidths",
+    defaults: COLUMN_DEFAULTS,
+    min: 80,
+    max: 600,
+  });
 
   const [view, setView] = useState<"kanban" | "lista">("kanban");
   const [services, setServices] = useState<ServiceFull[]>([]);
