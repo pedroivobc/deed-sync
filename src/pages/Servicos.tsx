@@ -46,6 +46,8 @@ import {
 } from "@/lib/serviceUi";
 import { getInitials } from "@/lib/clientUi";
 import { KanbanColumn } from "@/components/servicos/KanbanColumn";
+import { DynamicKanbanColumn } from "@/components/servicos/DynamicKanbanColumn";
+import { useServiceStages } from "@/hooks/useServiceStages";
 import { ServiceFormDialog } from "@/components/servicos/ServiceFormDialog";
 import { ImportCsvDialog } from "@/components/servicos/ImportCsvDialog";
 import { BulkActionBar } from "@/components/servicos/BulkActionBar";
@@ -253,6 +255,33 @@ export default function Servicos() {
     return g;
   }, [filtered]);
 
+  // Dynamic kanban (only for Escritura). Fetched once and reused; the hook
+  // also refreshes via realtime when the admin edits stages in Configurações.
+  const { stages: escrituraStages } = useServiceStages("escritura");
+  const useDynamicKanban = typeFilter === "escritura" && escrituraStages.length > 0;
+
+  const groupedDynamic = useMemo(() => {
+    const g: Record<string, ServiceCardData[]> = {};
+    for (const st of escrituraStages) g[st.id] = [];
+    const fallbackId = escrituraStages[0]?.id;
+    filtered.forEach((s) => {
+      if (s.type !== "escritura") return;
+      const key = s.service_stage_id && g[s.service_stage_id] ? s.service_stage_id : fallbackId;
+      if (!key) return;
+      g[key].push({
+        id: s.id,
+        type: s.type,
+        subject: s.subject,
+        client_name: s.client?.name ?? null,
+        created_at: s.created_at,
+        due_date: s.due_date,
+        pasta_fisica: s.pasta_fisica,
+        assigned_name: s.assigned?.name ?? s.assigned?.email ?? null,
+      });
+    });
+    return g;
+  }, [filtered, escrituraStages]);
+
   // Alerts for escritura services (badges on cards/rows)
   const escrituraIds = useMemo(
     () => filtered.filter((s) => s.type === "escritura").map((s) => s.id),
@@ -286,10 +315,44 @@ export default function Servicos() {
     if (!over) return;
     // Don't allow drag while multi-select is active
     if (selection.count > 0) return;
-    const newStage = over.id as ServiceStage;
     const id = active.id as string;
     const svc = services.find((s) => s.id === id);
-    if (!svc || svc.stage === newStage) return;
+    if (!svc) return;
+
+    const overId = String(over.id);
+
+    // Dynamic kanban: droppable id is "stage:<uuid>"
+    if (overId.startsWith("stage:")) {
+      const newStageId = overId.slice("stage:".length);
+      if (svc.service_stage_id === newStageId) return;
+      const previousStageId = svc.service_stage_id;
+      const newStage = escrituraStages.find((s) => s.id === newStageId);
+      setServices((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, service_stage_id: newStageId } : s)),
+      );
+      const { error } = await supabase
+        .from("services")
+        .update({ service_stage_id: newStageId })
+        .eq("id", id);
+      if (error) {
+        setServices((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, service_stage_id: previousStageId } : s)),
+        );
+        notify.error("Não foi possível mover o card.", { retry: () => onDragEnd(e) });
+        return;
+      }
+      await supabase.from("service_activity_log").insert({
+        service_id: id,
+        user_id: user?.id ?? null,
+        action: "stage_changed",
+        payload: { from: previousStageId, to: newStageId, dynamic: true } as never,
+      });
+      notify.success(`Movido para ${newStage?.name ?? "etapa"}`);
+      return;
+    }
+
+    const newStage = overId as ServiceStage;
+    if (svc.stage === newStage) return;
 
     const previousStage = svc.stage;
     // Optimistic
@@ -567,7 +630,25 @@ export default function Servicos() {
         ) : view === "kanban" ? (
           <DndContext sensors={sensors} onDragEnd={onDragEnd}>
             <div className="flex gap-3 overflow-x-auto pb-4">
-              {visibleStages.map((s) => (
+              {useDynamicKanban ? (
+                escrituraStages
+                  .filter((st) => !(hideConcluidos && st.category === "closed"))
+                  .map((st) => (
+                    <DynamicKanbanColumn
+                      key={st.id}
+                      stage={st}
+                      droppableId={`stage:${st.id}`}
+                      services={groupedDynamic[st.id] ?? []}
+                      onOpen={handleOpenEdit}
+                      virtualize={services.length > 50}
+                      alertsMap={alertsMap}
+                      selectedIds={selection.selected}
+                      onToggleSelect={(id) => selection.toggle(id)}
+                      onClickWithModifiers={(e, id) => selection.handleClick(e, id)}
+                    />
+                  ))
+              ) : (
+                visibleStages.map((s) => (
                 <KanbanColumn
                   key={s}
                   stage={s}
@@ -579,7 +660,8 @@ export default function Servicos() {
                   onToggleSelect={(id) => selection.toggle(id)}
                   onClickWithModifiers={(e, id) => selection.handleClick(e, id)}
                 />
-              ))}
+                ))
+              )}
             </div>
           </DndContext>
         ) : (
